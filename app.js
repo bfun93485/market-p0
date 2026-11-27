@@ -200,41 +200,24 @@
     renderTop();
   }
 
-  // ---------- sound (synthesised with Web Audio: no audio files, no licensing) ----------
-  var Sound = (function () {
-    var ctx = null;
-    function ac() {
-      if (!ctx) { var A = window.AudioContext || window.webkitAudioContext; if (!A) return null; ctx = new A(); }
-      if (ctx.state === "suspended") ctx.resume();
-      return ctx;
-    }
-    function tone(freq, start, dur, type, vol) {
-      var c = ac(); if (!c) return;
-      var o = c.createOscillator(), g = c.createGain(), t0 = c.currentTime + start;
-      o.type = type || "sine"; o.frequency.value = freq;
-      g.gain.setValueAtTime(0.0001, t0);
-      g.gain.exponentialRampToValueAtTime(vol || 0.15, t0 + 0.012);
-      g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
-      o.connect(g); g.connect(c.destination);
-      o.start(t0); o.stop(t0 + dur + 0.03);
-    }
-    var sounds = {
-      correct: function () { tone(784, 0, 0.12, "triangle", 0.16); tone(1175, 0.09, 0.2, "triangle", 0.16); },
-      wrong: function () { tone(220, 0, 0.16, "sawtooth", 0.05); tone(160, 0.08, 0.24, "sine", 0.12); },
-      combo: function (n) { var b = 523 * Math.pow(1.06, Math.min(n || 3, 12)); tone(b, 0, 0.08, "square", 0.05); tone(b * 1.26, 0.07, 0.08, "square", 0.05); tone(b * 1.5, 0.14, 0.14, "square", 0.05); },
-      fanfare: function () { [523, 659, 784, 1047].forEach(function (f, i) { tone(f, i * 0.1, 0.22, "triangle", 0.15); }); tone(1319, 0.45, 0.45, "triangle", 0.14); },
-      chest: function () { [880, 1175, 1568, 2093, 2637].forEach(function (f, i) { tone(f, i * 0.06, 0.16, "sine", 0.1); }); },
-      goal: function () { [659, 784, 988, 1319].forEach(function (f, i) { tone(f, i * 0.08, 0.2, "triangle", 0.13); }); },
-      news: function () { tone(523, 0, 0.12, "square", 0.06); tone(392, 0.16, 0.16, "square", 0.06); },
-      tap: function () { tone(660, 0, 0.05, "triangle", 0.05); }
-    };
-    return {
-      play: function (name, arg) {
-        if (!state.soundOn || !sounds[name]) return;
-        try { sounds[name](arg); } catch (e) { /* audio unavailable */ }
+  // ---------- sound: the layered kit in sfx.js (D42), played only while sound is switched on ----------
+  // Two jingles never play on top of each other: while a bigger sound plays, the XP coin is skipped and the daily-goal
+  // jingle waits for a combo to finish (behind mastery, a promotion or the chest it is skipped; its message still shows).
+  var HERO_MS = { fanfare: 1400, promotion: 1600, chest: 1100, combo: 650 }, MINOR_SOUNDS = { goal: 1, xp: 1 };
+  var heroUntil = 0, heroName = null;
+  var Sound = {
+    play: function (name, arg) {
+      if (!state.soundOn || !window.P0Sfx) return;
+      var now = Date.now();
+      if (MINOR_SOUNDS[name] && now < heroUntil) {
+        if (name === "goal" && heroName === "combo") Sound.later("goal", heroUntil - now + 60);
+        return;
       }
-    };
-  })();
+      if (HERO_MS[name]) { heroUntil = now + HERO_MS[name]; heroName = name; }
+      window.P0Sfx.play(name, arg);
+    },
+    later: function (name, ms, arg) { setTimeout(function () { Sound.play(name, arg); }, ms); }
+  };
 
   // ---------- top bar, toasts ----------
   function renderTop() {
@@ -607,35 +590,48 @@
       html += questionHTML(item, L.picked, "answer", L.xpFloat);
       if (L.picked !== null) html += feedbackDock(item.q, L.picked, "next", "Continue");
     } else if (L.phase === "explain") {
-      // Auto-checked short answer (D23). Trusted when it finds the key ideas; when it doesn't, the learner gets hints
-      // and a revise, never a "wrong" mark, because unusual wording can be missed.
-      var rub = window.P0_RUBRICS[sk.id], R = L.explainResult;
-      html += '<p class="eyebrow">Explain it · auto-checked</p><p class="q" id="explain-label">' + esc(sk.explain.prompt) + "</p>";
+      // Auto-checked short answer (D23, D43). Two tries: a first answer that misses gets coaching (partly right, not yet,
+      // or a common mix-up) and keeps the text for adding to; a second miss, or asking for the answer, shows the model
+      // answer and counts as a missed question (accuracy, combo, no XP). A pass on either try counts as right.
+      var rub = window.P0_RUBRICS[sk.id], R = L.explainResult, total = rub.concepts.length;
+      var foundN = R ? R.found.filter(Boolean).length : 0;
+      var chips = function (res) {
+        return '<div class="concepts" aria-label="Key ideas the checker found">' + rub.concepts.map(function (cc, i) {
+          return '<span class="concept ' + (res.found[i] ? "got" : "miss") + '">' + icon(res.found[i] ? "check" : "ring", 16) + esc(cc.label) + "</span>";
+        }).join("") + "</div>";
+      };
+      var lastTry = '<p class="small last-try">' + icon("ring", 14) + "One more try. If it still misses the key ideas, you'll see the full answer and this one counts as missed.</p>";
+      html += '<p class="eyebrow">Explain it · ' + (R && !L.explainDone ? "last try" : "auto-checked") + '</p><p class="q" id="explain-label">' + esc(sk.explain.prompt) + "</p>";
       if (!L.explainDone) {
-        if (R && R.wrong) {
-          html += '<div class="notice warn" role="status"><p class="notice-title">Careful: that\'s a common mix-up</p><p>' + esc(R.wrong) + '</p><p class="small">Revise your answer, or see the model answer.</p></div>';
+        var missing = R ? rub.concepts.map(function (cc, i) { return R.found[i] ? null : cc.hint; }).filter(Boolean) : [];
+        var hintList = "<ul>" + missing.map(function (h) { return "<li>" + esc(h) + "</li>"; }).join("") + "</ul>";
+        if (R && L.explainKind === "mixup") {
+          html += '<div class="notice warn" role="status"><p class="notice-title">' + art("noentry", 22) + "Careful: that's a common mix-up</p><p>" + esc(R.wrong) + "</p>" + lastTry + "</div>";
+        } else if (R && L.explainKind === "partial") {
+          html += '<div class="notice partial" role="status"><p class="notice-title">' + art("target", 22) + "You're partly right!</p>" +
+            "<p>You've got <b>" + foundN + " of " + total + "</b> key ideas:</p>" + chips(R) + "<p>Add a sentence or two about:</p>" + hintList + lastTry + "</div>";
         } else if (R) {
-          var missing = rub.concepts.map(function (cc, i) { return R.found[i] ? null : cc.hint; }).filter(Boolean);
-          html += '<div class="notice hint" role="status"><p class="notice-title">' + art("bulb", 22) + "Almost! Try adding</p><ul>" +
-            missing.map(function (h) { return "<li>" + esc(h) + "</li>"; }).join("") + "</ul>" +
-            '<p class="small">The checker looks for key ideas and can miss unusual wording. If you think you covered it, compare with the model answer.</p></div>';
+          html += '<div class="notice hint" role="status"><p class="notice-title">' + art("bulb", 22) + "Not quite yet</p>" +
+            "<p>Your answer doesn't cover the key ideas yet. Think about:</p>" + hintList + lastTry + "</div>";
         }
         html += '<textarea id="explain" class="textbox" rows="4" aria-labelledby="explain-label" placeholder="Say it the way you would to a friend.">' + esc(L.explainText) + "</textarea>" +
           (L.explainError ? '<p class="error" role="alert">' + esc(L.explainError) + "</p>" : "") +
-          '<div class="dock"><div class="row"><button type="button" class="btn btn-primary" data-action="explaincheck" id="continue">' + (R ? "Check again" : "Check my answer") + "</button>" +
-          (R ? '<button type="button" class="btn btn-secondary" data-action="explainmodel">Show the model answer</button>' : "") + "</div></div>";
+          '<div class="dock"><div class="row"><button type="button" class="btn btn-primary" data-action="explaincheck" id="continue">' +
+          (R ? (L.explainKind === "partial" ? "Check my addition" : "Check again") : "Check my answer") + "</button>" +
+          (R ? '<button type="button" class="btn btn-secondary" data-action="explainmodel">Show me the answer</button>' : "") + "</div></div>";
       } else {
-        var res = R || { found: rub.concepts.map(function () { return false; }) };
-        html += '<div class="concepts" aria-label="Key ideas the checker found">' + rub.concepts.map(function (cc, i) {
-          return '<span class="concept ' + (res.found[i] ? "got" : "miss") + '">' + icon(res.found[i] ? "check" : "ring", 16) + esc(cc.label) + "</span>";
-        }).join("") + "</div>";
+        html += chips(R || { found: rub.concepts.map(function () { return false; }) });
         html += '<div class="compare"><div class="pane"><p class="label">You</p><p>' + esc(L.explainText || "(no answer)") + '</p></div><div class="pane model"><p class="label">Model answer</p><p>' +
           esc(sk.explain.model) + "</p></div></div>";
         if (L.explainDone === "pass") {
-          html += '<div class="dock good" role="status"><p class="dock-title">' + icon("check", 22) + "Great explanation!</p><p>You covered the key ideas" + (L.firstTime ? " · +" + XP.explain + " XP" : "") +
+          var revised = L.explainTries > 1;
+          html += '<div class="dock good" role="status"><p class="dock-title">' + icon("check", 22) + (revised ? "You got there!" : "Great explanation!") + "</p><p>" +
+            (revised ? "Your revised answer covers the key ideas" : "You covered the key ideas") + (L.firstTime ? " · +" + XP.explain + " XP" : "") +
             '.</p><button type="button" class="btn btn-primary" data-action="next" id="continue">Continue</button></div>';
         } else {
-          html += '<div class="dock neutral" role="status"><p class="dock-title">Compare with the model answer</p><p>The ideas marked with an empty circle are the ones to add next time. No penalty, keep going.</p>' +
+          html += '<div class="dock bad" role="status"><p class="dock-title">' + icon("cross", 22) + "Not yet</p><p>" +
+            (L.explainAsked ? "Here's the full answer, so this one counts as missed. " : "You covered " + foundN + " of " + total + " key ideas, so this one counts as missed. ") +
+            "Compare with the model answer: the ideas with an empty circle are the ones to add next time.</p>" +
             '<button type="button" class="btn btn-primary" data-action="next" id="continue">Continue</button></div>';
         }
       }
@@ -702,10 +698,12 @@
         setTimeout(function () { Sound.play("combo", n); }, 260);
         if (L.firstTime) give(XP.combo, "Combo: " + n + " right in a row");
         else toast(n + " right in a row!", "fire");
+        return true; // the combo sound replaces the XP coin for this answer
       }
     } else {
       L.combo = 0; Sound.play("wrong"); buzz([30, 40, 30]);
     }
+    return false;
   }
 
   function answerPractice(i) {
@@ -713,8 +711,10 @@
     if (L.picked !== null) return;
     L.picked = i;
     var item = L.queue[L.qi], ok = !!item.q.o[i].ok;
-    if (ok && !item.retry && L.firstTime) { L.xpFloat = "+" + XP.practice + " XP"; give(XP.practice, null); }
-    scoreAnswer(ok);
+    var xpNow = ok && !item.retry && L.firstTime;
+    if (xpNow) { L.xpFloat = "+" + XP.practice + " XP"; give(XP.practice, null); }
+    var comboHit = scoreAnswer(ok);
+    if (xpNow && !comboHit) Sound.later("xp", 230); // the coin follows the "correct" chime
     if (!ok && !item.retry) L.queue.push({ q: item.q, order: shuffle(range(item.q.o.length)), retry: true });
     renderLesson("#continue");
   }
@@ -734,15 +734,30 @@
     L.explainError = null;
     L.explainTries++;
     L.explainResult = r;
+    var found = r.found.filter(Boolean).length;
+    // pass: covers most key ideas (the rubric's rule); partial: some ideas; none: no key idea yet; mixup: a known misconception
+    L.explainKind = r.pass ? "pass" : r.wrong ? "mixup" : found > 0 ? "partial" : "none";
     if (r.pass) {
       L.explainDone = "pass";
       if (L.firstTime) give(XP.explain, null);
-      Sound.play("correct"); buzz(15);
+      var comboHit = scoreAnswer(true);
+      if (L.firstTime && !comboHit) Sound.later("xp", 230);
+    } else if (L.explainTries >= 2) {
+      explainMissed(false); // D43: two tries without the key ideas: show the answer and count it as missed
     } else {
-      if (L.explainTries >= 2) L.explainDone = "model";
-      Sound.play(r.wrong ? "wrong" : "tap");
+      Sound.play(L.explainKind === "partial" ? "almost" : "wrong");
     }
     renderLesson(L.explainDone ? "#continue" : "#explain");
+    var ta = document.getElementById("explain");
+    if (ta) ta.selectionStart = ta.selectionEnd = ta.value.length; // keep writing where the answer ends
+  }
+  // The explanation counts like a question (D43): missed after two tries, or when the learner asks for the answer.
+  function explainMissed(askedForAnswer) {
+    var L = lesson;
+    L.explainDone = "missed";
+    L.explainAsked = askedForAnswer;
+    if (askedForAnswer) { L.answered++; L.combo = 0; Sound.play("tap"); }
+    else scoreAnswer(false);
   }
 
   function startChecks() {
@@ -781,6 +796,7 @@
     } else {
       save();
       L.phase = "failed";
+      Sound.play("almost");
       renderLesson();
     }
   }
@@ -821,7 +837,7 @@
     if (pendingRankUp === null || !overlay.hidden) return false;
     var r = RANKS[pendingRankUp];
     pendingRankUp = null;
-    Sound.play("fanfare");
+    Sound.play("promotion");
     celebrate({ kicker: "Promoted!", art: r.art, title: "You're now: " + r.name, text: "Your career-ladder rank rises as your XP grows.", promo: true });
     return true;
   }
@@ -879,7 +895,7 @@
     if (ok) {
       R.correct++; R.combo++;
       Sound.play("correct"); buzz(15);
-      if (!R.extra) addXP(XP.review, null);
+      if (!R.extra) { addXP(XP.review, null); Sound.later("xp", 230); }
     } else { R.combo = 0; Sound.play("wrong"); buzz([30, 40, 30]); }
     renderReview("#continue");
   }
@@ -925,12 +941,12 @@
     switch (a) {
       case "home": renderHome(); break;
       case "lesson": startLesson(el.getAttribute("data-id")); break;
-      case "locked": toast(lockedMessage(el.getAttribute("data-id")), "lock"); Sound.play("tap"); break;
+      case "locked": toast(lockedMessage(el.getAttribute("data-id")), "lock"); Sound.play("locked"); break;
       case "hook": lesson.hookPick = +el.getAttribute("data-i"); Sound.play("tap"); renderLesson("#continue"); break;
       case "next": lessonNext(); break;
       case "answer": answerPractice(+el.getAttribute("data-i")); break;
       case "explaincheck": checkExplanation(); break;
-      case "explainmodel": lesson.explainDone = "model"; Sound.play("tap"); renderLesson("#continue"); break;
+      case "explainmodel": explainMissed(true); renderLesson("#continue"); break;
       case "startcheck": startChecks(); break;
       case "check": answerCheck(+el.getAttribute("data-i")); break;
       case "recards": lesson.phase = "card"; lesson.card = 0; lesson.recards = true; renderLesson(); break;
@@ -1018,7 +1034,7 @@
     consentOpen = false;
     app.inert = false; if (topbar) topbar.inert = false;
     overlay.hidden = true; overlay.innerHTML = ""; overlay.className = "overlay";
-    Sound.play("tap");
+    Sound.play("start");
     focusIn();
   }
 

@@ -2,13 +2,13 @@
    Strategy: network first, so a new version always shows when the server is reachable; the cache is only a fallback
    for when it isn't (offline, or opened from the Home Screen with no connection). Progress itself is NOT here: it stays
    in localStorage, which the service worker never touches. Bump CACHE when files are added or removed. */
-var CACHE = "p0-shell-v1";
+var CACHE = "p0-shell-v2";
 var ART = ["apple", "backpack", "bank", "banknote", "barchart", "basket", "bolt", "brain", "briefcase", "building", "bulb",
   "chartup", "crown", "farmer", "fire", "gift", "harvest", "informed", "juicebox", "label", "lemon", "lock", "medal", "memo",
   "moneybag", "news", "noentry", "numbers", "package", "people", "pizza", "puzzle", "rocket", "scale", "scroll", "shield",
   "shopper", "snowflake", "sparkles", "store", "sunrise", "target", "ticket", "trophy", "tshirt", "umbrella"];
 var FILES = ["./", "index.html", "terms.html", "styles.css", "ui.js", "content.js", "rubrics.js", "grader.js", "stall.js",
-  "install.js", "app.js", "manifest.webmanifest",
+  "install.js", "sfx.js", "app.js", "manifest.webmanifest", "sounds.html",
   "assets/fonts/fredoka-latin.woff2", "assets/fonts/inter-latin.woff2",
   "assets/icons/icon-180.png", "assets/icons/icon-192.png", "assets/icons/icon-512.png",
   "assets/licenses/FluentEmoji-MIT.txt", "assets/licenses/Fredoka-OFL.txt", "assets/licenses/Inter-OFL.txt"]

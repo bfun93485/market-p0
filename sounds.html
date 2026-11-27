@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#12112a">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Sound board · Market P0</title>
+  <link rel="icon" type="image/png" sizes="192x192" href="assets/icons/icon-192.png">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .doc .sb-list { list-style: none; margin: 18px 0 0; padding: 0; display: grid; gap: 10px; }
+    .doc .sb-list li { margin: 0; }
+    #all { width: 100%; }
+    .sb-item { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-md); padding: 12px 14px; }
+    .sb-item .btn { grid-row: span 2; min-width: 64px; }
+    .sb-name { font-weight: 800; margin: 0; }
+    .sb-when { margin: 0; }
+    .sb-item canvas { grid-column: 1 / -1; width: 100%; height: 38px; display: block; }
+    .sb-note { color: var(--on-bg-muted); }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <span class="brand">P0 <span class="brand-sub">sound board</span></span>
+      <a class="chip backlink" href="index.html">← Back to the app</a>
+    </div>
+  </header>
+  <main id="board" class="sheet doc">
+    <h1>Sound board</h1>
+    <p>Every sound in Market P0. Tap one to hear it, or play them all in a row. Each sound is made in the browser (no audio
+      files), so tell us which ones to change and how.</p>
+    <p class="small sb-note">On an iPhone, turn the silent switch off: iPhones mute web sounds while on silent.</p>
+    <button type="button" class="btn btn-primary" id="all">Play all</button>
+    <ul class="sb-list" id="list"></ul>
+  </main>
+  <script src="sfx.js"></script>
+  <script>
+    (function () {
+      var list = document.getElementById("list");
+      P0Sfx.list.forEach(function (s) {
+        var li = document.createElement("li");
+        li.className = "sb-item";
+        li.innerHTML = '<button type="button" class="btn btn-secondary small" data-sound="' + s.name + '">Play</button>' +
+          '<p class="sb-name">' + s.label + '</p><p class="small sb-when">' + s.when + '</p><canvas width="600" height="76" aria-hidden="true"></canvas>';
+        list.appendChild(li);
+        // Draw the sound's shape (rendered silently) so it can be compared at a glance.
+        P0Sfx.render(s.name, 5, 1.8).then(function (buf) {
+          var cv = li.querySelector("canvas"), g = cv.getContext("2d"), d = buf.getChannelData(0), W = cv.width, H = cv.height, step = Math.floor(d.length / W);
+          g.fillStyle = "#6c63ff";
+          var top = 0; for (var k = 0; k < d.length; k++) top = Math.max(top, Math.abs(d[k])); top = top || 1;
+          for (var x = 0; x < W; x++) {
+            var m = 0;
+            for (var i = x * step; i < (x + 1) * step; i++) m = Math.max(m, Math.abs(d[i]));
+            var h = Math.max(1, (m / top) * H);
+            g.fillRect(x, (H - h) / 2, 1, h);
+          }
+        });
+      });
+      document.addEventListener("click", function (e) {
+        var b = e.target.closest("[data-sound]");
+        if (b) P0Sfx.play(b.getAttribute("data-sound"), 5);
+      });
+      document.getElementById("all").addEventListener("click", function () {
+        P0Sfx.list.forEach(function (s, i) { setTimeout(function () { P0Sfx.play(s.name, 5); }, i * 1900); });
+      });
+    })();
+  </script>
+</body>
+</html>
