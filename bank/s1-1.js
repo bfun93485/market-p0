@@ -146,6 +146,67 @@
     sc("1.1-46", 3, [
       { s: "A client wants to sell 5,000 shares of a thinly traded stock quoted 9.80 × 500 / 9.95 × 400 (bid × size / ask × size).",
         p: [{ q: "How many shares can the client sell at 9.80 right now?", a: ["About 500", "Only 500 shares are bid at 9.80."], d: [["All 5,000", "The bid is only for 500 shares."], ["About 400", "400 is the ask size, the sellers' side."]] },
-            { q: "If the client insists on selling all 5,000 immediately, what probably happens?", a: ["The rest sells at lower and lower bids", "Selling more than the bid size pushes into worse prices."], d: [["All 5,000 sell at 9.80", "There aren't enough buyers at 9.80."], ["The price rises", "Heavy selling pushes prices down."]] }] }])
+            { q: "If the client insists on selling all 5,000 immediately, what probably happens?", a: ["The rest sells at lower and lower bids", "Selling more than the bid size pushes into worse prices."], d: [["All 5,000 sell at 9.80", "There aren't enough buyers at 9.80."], ["The price rises", "Heavy selling pushes prices down."]] }] }]),
+    // ---------- Top-up to 50 families (D44) ----------
+    mc("1.1-50", 2, [
+      { q: "The quote is 25.00 / 25.04. You place an order to buy at 25.00 instead of paying 25.04. What happens?", a: ["You join the buyers at 25.00 and fill only if a seller comes down to your price", "You might save the spread, but you might not get filled."],
+        d: [["It fills instantly at 25.00", "Only buying at the ask fills instantly."], ["It's rejected for being too low", "Bidding below the ask is normal; you just wait."]] }]),
+    tf("1.1-51", 1, [
+      ["The spread is a cost of trading immediately.", true, "Buying now pays the ask; selling now gets the bid."],
+      ["The spread is a yearly fee the exchange charges.", false, "It's the gap between the best buyer's and seller's prices."]]),
+    gen("1.1-52", 3, function (R) {
+      var pa, sa, pb, sb, ra, rb, lowTighter = Math.random() < 0.5; // pick the winner first so neither stock is a safe guess
+      do { // near-ties are re-drawn so the answer is never ambiguous
+        pa = R.pick([8, 10, 12, 15]); sa = R.pick([2, 3, 4]) / 100; pb = R.pick([80, 100, 150, 200]); sb = R.pick([5, 6, 8, 10, 15, 20, 25]) / 100;
+        ra = 100 * sa / pa; rb = 100 * sb / pb;
+      } while (Math.abs(ra - rb) < 0.03 || (lowTighter ? ra > rb : rb > ra));
+      var swap = Math.random() < 0.5;
+      var A = { n: "Stock A", p: swap ? pb : pa, s: swap ? sb : sa, r: swap ? rb : ra }, Bq = { n: "Stock B", p: swap ? pa : pb, s: swap ? sa : sb, r: swap ? ra : rb };
+      var tight = A.r < Bq.r ? A : Bq, wide = tight === A ? Bq : A;
+      function q(x) { return R.money(x.p, 2) + " / " + R.money(x.p + x.s, 2); }
+      return { q: "Stock A is quoted " + q(A) + ". Stock B is quoted " + q(Bq) + ". Relative to its price, which has the tighter spread?",
+        a: [tight.n, tight.n + "'s spread is about " + Math.round(tight.r * 100) / 100 + "% of its price; " + wide.n + "'s is about " + Math.round(wide.r * 100) / 100 + "%."],
+        d: [[wide.n, "In cents it may look tighter or wider, but as a share of price it's about " + Math.round(wide.r * 100) / 100 + "%."], ["They're the same", "As a share of price they differ: " + Math.round(A.r * 100) / 100 + "% versus " + Math.round(Bq.r * 100) / 100 + "%."]] };
+    }),
+    gen("1.1-53", 2, function (R) {
+      var bid = R.int(1000, 9000) / 100, sp = R.pick([1, 2, 3, 5, 10]) / 100, ask = Math.round((bid + sp) * 100) / 100, askFor = Math.random() < 0.5;
+      var right = askFor ? R.money(ask, 2) : R.money(bid, 2);
+      return { q: askFor ? "A stock's bid is " + R.money(bid, 2) + " and the spread is " + R.money(sp, 2) + ". What is the ask?" : "A stock's ask is " + R.money(ask, 2) + " and the spread is " + R.money(sp, 2) + ". What is the bid?",
+        a: [right, askFor ? "Ask = bid + spread." : "Bid = ask − spread."],
+        d: R.uniq(right, [[askFor ? R.money(bid - sp, 2) : R.money(ask + sp, 2), askFor ? "The ask is above the bid, not below." : "The bid is below the ask, not above."], [R.money(sp, 2), "That's the spread itself."], [askFor ? R.money(bid + sp * 10, 2) : R.money(ask - sp * 10, 2), "Ten times the spread; check the decimals."]]) };
+    }),
+    tf("1.1-54", 2, [
+      ["With a 10-cent spread, buying and then immediately selling 100 shares costs about $10 in spread.", true, "100 shares × $0.10."],
+      ["The spread cost is the same whether you trade 10 shares or 10,000.", false, "It's paid on every share you trade."]]),
+    mc("1.1-55", 2, [
+      { q: "A quote changes from 30.00 / 30.02 to 30.00 / 30.10. What happened?", a: ["The best seller's price rose, so the spread widened", "The ask moved up; the bid stayed."],
+        d: [["The bid rose", "The bid is still 30.00."], ["The spread tightened", "It went from 2 cents to 10 cents."]] },
+      { q: "A quote changes from 30.00 / 30.10 to 30.08 / 30.10. What happened?", a: ["The best buyer's price rose, so the spread tightened", "The bid moved up; the ask stayed."],
+        d: [["The ask fell", "The ask is still 30.10."], ["The spread widened", "It went from 10 cents to 2 cents."]] }]),
+    tf("1.1-56", 3, [
+      ["In very fast markets, the quote you see can change before your order arrives.", true, "Quotes update constantly; that's why some orders set a price limit."],
+      ["The quote on your screen is guaranteed for one minute.", false, "Quotes can change in fractions of a second."]]),
+    mc("1.1-57", 3, [
+      { q: "A stock is \"locked\": its best bid equals its best ask. What does that suggest?", a: ["Buyers and sellers are at the same price, so a trade should happen almost at once", "A locked market usually clears quickly."],
+        d: [["Trading in the stock is halted", "Halts are separate; a lock is just equal bid and ask."], ["The spread is very wide", "The spread is zero when the market is locked."]] }]),
+    gen("1.1-58", 3, function (R) {
+      var bid = R.int(2000, 8000) / 100, sp = R.pick([2, 4, 6, 10]) / 100, n = R.pick([1000, 5000, 10000, 20000]), cost = n * sp / 2, right = R.money(cost, 2);
+      return { q: "A fund measures its trading cost against the mid. The quote is " + R.money(bid, 2) + " / " + R.money(bid + sp, 2) + ". It buys " + R.count(n) + " shares at the ask. What did crossing from the mid cost?",
+        a: [right, "From mid to ask is half the spread: " + R.money(sp / 2, 2) + " × " + R.count(n) + " = " + right + "."],
+        d: R.uniq(right, [[R.money(n * sp, 2), "That's the full spread; from the mid it's half."], [R.money(sp / 2, 2), "That's per share."], ["Nothing: it paid the quoted price", "Paying the ask costs half the spread compared with the mid."]]) };
+    }),
+    mc("1.1-59", 1, [
+      { q: "Where does the word \"bid\" come from?", a: ["An auction: a bid is what a buyer offers", "In markets, the bid is the best price buyers are offering."],
+        d: [["A shop's price tag", "A price tag is a seller's ask."], ["A bank's interest rate", "Not related."]] }]),
+    mc("1.1-60", 1, [
+      { q: "Which quote has the tightest spread? A: 10.00 / 10.01. B: 10.00 / 10.05. C: 10.00 / 10.20.", a: ["A", "A one-cent spread is the tightest."],
+        d: [["B", "B's spread is 5 cents."], ["C", "C's spread is 20 cents, the widest."]] },
+      { q: "Which quote has the widest spread? A: 40.00 / 40.02. B: 40.00 / 40.30. C: 40.00 / 40.05.", a: ["B", "B's spread is 30 cents."],
+        d: [["A", "A's is only 2 cents."], ["C", "C's is 5 cents."]] }]),
+    sc("1.1-61", 3, [
+      { s: "A client sends an order to buy 300 shares at whatever the market price is. The stock is quoted 4.10 / 4.40.",
+        p: [{ q: "About what price will they pay?", a: ["About 4.40, the ask", "Buying immediately pays the ask."], d: [["4.10", "That's the bid."], ["4.25", "That's the mid; immediate buys pay the ask."]] },
+            { q: "How much more than the mid is that, per share?", a: ["15 cents", "Mid is 4.25; 4.40 − 4.25 = 0.15."], d: [["30 cents", "That's the full spread."], ["Nothing", "The ask is above the mid."]] },
+            { q: "What could the client do instead in such a wide market?", a: ["Set a price they're willing to pay and wait for a seller", "That avoids paying the full spread, at the risk of not filling."], d: [["Nothing: buying always costs the ask", "They can post their own price and wait."], ["Ask the exchange to lower the price", "Exchanges don't change other traders' prices."]] }] }])
   ]);
 })(window.P0Bank);

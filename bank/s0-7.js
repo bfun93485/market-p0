@@ -125,6 +125,49 @@
             { q: "Roughly how did the client do versus the wider market?", a: ["About 20 percentage points worse", "−25% versus −5%."], d: [["About the same", "−25% is much worse than −5%."], ["About 20 points better", "Falling 25% is worse than falling 5%."]] }] }]),
     mc("0.7-46", 3, [
       { q: "Which is the best description of \"risk\" in a professional setting?", a: ["How uncertain and widely spread the possible outcomes are", "Professionals measure risk as variability, not only losses."],
-        d: [["How much a stock costs per share", "Price per share says nothing about risk."], ["Whether a stock went down last week", "One week's move doesn't define risk."]] }])
+        d: [["How much a stock costs per share", "Price per share says nothing about risk."], ["Whether a stock went down last week", "One week's move doesn't define risk."]] }]),
+    // ---------- Top-up to 50 families (D44) ----------
+    mc("0.7-50", 1, [
+      { q: "Which of these usually carries the least risk?", a: ["Cash in an insured bank savings account", "Deposits are insured up to a limit, and the value doesn't swing."],
+        d: [["Shares of one young tech company", "A single young company can swing wildly."], ["A single stock bought with borrowed money", "Borrowing to invest magnifies the swings."]] }]),
+    tf("0.7-51", 1, [
+      ["Higher risk means a wider range of possible outcomes, both good and bad.", true, "Risk is about how widely results can swing."],
+      ["Higher risk only means a bigger chance of good outcomes.", false, "It widens both the good and the bad outcomes."]]),
+    gen("0.7-52", 2, function (R) {
+      var n = R.pick([10, 15, 20, 30]), k = R.pick([4, 5, 6, 8]), ind = R.pick(["banking", "airline", "oil", "retail", "software"]);
+      var xFirst = Math.random() < 0.5, one = "all " + n + " in " + ind + " companies", many = n + " companies spread across " + k + " different industries";
+      var A = xFirst ? one : many, Bp = xFirst ? many : one, right = xFirst ? "Portfolio Y" : "Portfolio X";
+      return { q: "Portfolio X holds " + A + ". Portfolio Y holds " + Bp + ". Which is more diversified?",
+        a: [right, "Different industries don't all suffer at once; one industry shares the same risks."],
+        d: [[right === "Portfolio X" ? "Portfolio Y" : "Portfolio X", "Same number of stocks, but they all share one industry's risks."], ["They're equally diversified, with " + n + " stocks each", "Counting stocks isn't enough; what matters is how differently they behave."]] };
+    }),
+    mc("0.7-53", 2, [
+      { q: "Why is a young company's stock usually riskier than a large, established company's?", a: ["Its future profits are much less certain", "More uncertainty means a wider range of outcomes."],
+        d: [["Young companies aren't allowed to pay dividends", "There's no such rule."], ["Its share price is lower", "Share price says nothing about risk."]] }]),
+    tf("0.7-54", 2, [
+      ["Diversifying can lower risk without necessarily lowering expected return.", true, "Spreading across many investments with similar expected returns cuts company-specific risk at little cost."],
+      ["Diversifying always cuts your expected return in half.", false, "It mainly cuts company-specific risk, not expected return."]]),
+    gen("0.7-55", 2, function (R) {
+      var v = R.pick([5000, 10000, 20000, 50000]), x = R.pick([5, 8, 10, 15, 20, 25]), loss = v * x / 100, right = R.money(loss, 0);
+      return { q: "A well-diversified " + R.money(v, 0) + " portfolio moves almost exactly with the whole stock market. The market falls " + x + "%. About how much does the portfolio lose?",
+        a: [right, x + "% of " + R.money(v, 0) + " = " + right + ". Diversification can't remove market-wide risk."],
+        d: R.uniq(right, [["About $0, because it's diversified", "Diversification doesn't protect against the whole market falling."], [R.money(loss / 10, 0), "Ten times too small."], [R.money(v - loss, 0), "That's what's left, not the loss."]]) };
+    }),
+    tf("0.7-56", 3, [
+      ["How much an investment's returns swing from period to period is often called volatility.", true, "Volatility is a common way to measure risk."],
+      ["Volatility means how fast a company is growing.", false, "It measures how much returns swing, not growth."]]),
+    mc("0.7-57", 3, [
+      { q: "A fund says it has \"lowered its volatility.\" What does that mean?", a: ["Its returns swing less from period to period", "Lower volatility means a narrower range of outcomes."],
+        d: [["It guarantees no losses", "Lower volatility still allows losses."], ["It will earn more every year", "Volatility is about swings, not about higher returns."]] }]),
+    mc("0.7-58", 3, [
+      { q: "Which pair tends to balance each other best?", a: ["An airline and an oil producer", "High fuel prices hurt airlines but help oil producers."],
+        d: [["Two airlines", "They share the same risks, like fuel prices."], ["Two oil producers", "They rise and fall together with oil prices."]] }]),
+    mc("0.7-59", 2, [
+      { q: "Why do stocks in the same industry often fall together?", a: ["They face the same risks, such as demand or costs", "Shared risks hit them at the same time."],
+        d: [["Exchanges link their prices", "Exchanges don't link prices."], ["They all have the same shareholders", "Owners differ; the shared business risks are the link."]] }]),
+    sc("0.7-60", 3, [
+      { s: "A client started the year with $50,000 in stocks and $50,000 in bonds. After a strong year for stocks, the stocks are worth $70,000 and the bonds still $50,000.",
+        p: [{ q: "What share of the portfolio is now in stocks?", a: ["About 58%", "$70,000 ÷ $120,000 ≈ 58%."], d: [["50%", "That was the starting split."], ["70%", "That divides by $100,000; the total is now $120,000."]] },
+            { q: "What has happened to the portfolio's risk?", a: ["It has risen, because more of it is in the riskier part", "Stocks swing more than bonds, and they're now a bigger share."], d: [["It has fallen, because the portfolio grew", "Growing doesn't make it less risky; the mix matters."], ["It's unchanged", "The mix shifted toward stocks."]] }] }])
   ]);
 })(window.P0Bank);

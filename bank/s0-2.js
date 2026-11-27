@@ -170,6 +170,42 @@
       ["Market cap is only updated once a year, in the annual report.", false, "It changes live with the share price."]]),
     tf("0.2-47", 3, [
       ["If a company buys back some of its own shares and the price is unchanged, its market cap falls.", true, "Fewer shares at the same price. The company paid cash out to buy them."],
-      ["Buying back shares raises market cap even if the price doesn't change.", false, "Fewer shares × the same price = a smaller market cap."]])
+      ["Buying back shares raises market cap even if the price doesn't change.", false, "Fewer shares × the same price = a smaller market cap."]]),
+    // ---------- Top-up to 50 families (D44) ----------
+    tf("0.2-50", 2, [
+      ["A company with a $50 billion market cap has $50 billion in cash.", false, "Market cap is what all the shares are worth together, not cash in the bank."],
+      ["Market cap and the cash a company holds are different things.", true, "Cash is on the balance sheet (a later lesson); market cap is price × shares."]]),
+    mc("0.2-51", 2, [
+      { q: "Investors often call companies worth more than about $10 billion…", a: ["Large-cap", "Labels vary, but large-cap usually means over about $10 billion."],
+        d: [["Small-cap", "Small-caps are much smaller, roughly a few hundred million to a couple of billion dollars."], ["Penny stocks", "Penny stocks are very low-priced shares, usually of tiny companies."]] },
+      { q: "Investors often call companies worth roughly $300 million to $2 billion…", a: ["Small-cap", "Labels vary, but that range is the usual small-cap band."],
+        d: [["Large-cap", "Large-caps are usually over about $10 billion."], ["Mega-cap", "Mega-caps are the very largest, hundreds of billions of dollars."]] }]),
+    gen("0.2-52", 2, function (R) {
+      var n = R.pick([100, 200, 400, 500, 1000]), x = R.pick([1, 2, 3, 5]), up = Math.random() < 0.5, ch = x * n * 1e6;
+      var right = (up ? "Up " : "Down ") + R.big(ch);
+      return { q: "A company has " + R.count(n * 1e6) + " shares. Its price " + (up ? "rises" : "falls") + " " + R.money(x, 0) + " today. How much does its market cap change?",
+        a: [right, R.money(x, 0) + " × " + R.count(n * 1e6) + " shares = " + R.big(ch) + (up ? " added." : " lost.")],
+        d: R.uniq(right, [[(up ? "Down " : "Up ") + R.big(ch), "Check the direction: the price " + (up ? "rose" : "fell") + "."], [(up ? "Up " : "Down ") + R.big(ch * 10), "Ten times too much; check the zeros."], [(up ? "Up " : "Down ") + R.money(x, 0), "That's the change per share, not for the whole company."]]) };
+    }),
+    gen("0.2-53", 3, function (R) {
+      var sA = R.pick([100, 200, 250, 400, 500]), p = R.pick([12, 15, 20, 24, 30, 40, 60]), cap = p * sA * 1e6;
+      var right = R.money(p, 0);
+      return { q: "Company A has " + sA + " million shares. Company B is worth " + R.big(cap) + ". At what share price would A be exactly as big as B?",
+        a: [right, "Price = " + R.big(cap) + " ÷ " + sA + " million shares = " + right + "."],
+        d: R.uniq(right, [[R.money(p * 10, 0), "Ten times too high; check the zeros."], [R.money(p / 10, 2), "Ten times too low; check the zeros."], [R.money(p * 2, 0), "That would make A worth " + R.big(cap * 2) + "."]]) };
+    }),
+    tf("0.2-54", 3, [
+      ["A company's market cap can fall even if nothing about its business changed, simply because buyers pay less for its shares.", true, "Market cap follows the share price, which follows buyers and sellers."],
+      ["Market cap only changes when the company's business changes.", false, "It changes whenever the share price does, which can be for many reasons."]]),
+    mc("0.2-55", 3, [
+      { q: "Company X has 1 billion shares at $30. Company Y has 300 million shares at $90. Which statement is right?", a: ["X is slightly bigger: $30 billion versus $27 billion", "Price × shares for each."],
+        d: [["Y is bigger, because its price is three times higher", "Y has far fewer shares: $90 × 300 million = $27 billion."], ["They're the same size", "$30 billion and $27 billion aren't equal."]] },
+      { q: "Company X has 2 billion shares at $10. Company Y has 400 million shares at $55. Which statement is right?", a: ["Y is slightly bigger: $22 billion versus $20 billion", "Price × shares for each."],
+        d: [["X is bigger, because it has five times the shares", "Y's much higher price more than makes up for it."], ["They're the same size", "$20 billion and $22 billion aren't equal."]] }]),
+    sc("0.2-56", 3, [
+      { s: "Your manager asks about a client's holding, Harbor Health: 600 million shares at $45. Later that day the stock falls 10%.",
+        p: [{ q: "What was Harbor Health's market cap before the fall?", a: ["$27 billion", "$45 × 600 million = $27 billion."], d: [["$2.7 billion", "Ten times too small."], ["$270 billion", "Ten times too big."]] },
+            { q: "What is its market cap after the 10% fall?", a: ["$24.3 billion", "$27 billion × 0.9 = $24.3 billion."], d: [["$26.1 billion", "That's a 10% fall in a different number; 10% of $27 billion is $2.7 billion."], ["$17 billion", "That subtracts $10 billion, not 10%."]] },
+            { q: "How much value did all shareholders lose together?", a: ["$2.7 billion", "10% of $27 billion."], d: [["$4.50", "That's the loss per share."], ["$27 billion", "That's the whole company, not the loss."]] }] }])
   ]);
 })(window.P0Bank);

@@ -132,6 +132,55 @@
             { q: "The stock drops 0.40 before you sell any. What's the hit to your inventory?", a: ["About −$1,200", "3,000 × −0.40."], d: [["About −$120", "That uses 300 shares."], ["Nothing, since you haven't sold", "The loss in value is real right away."]] }] }]),
     mc("1.4-47", 3, [
       { q: "Which statement best describes a good day for a market maker?", a: ["It traded a lot, kept inventory small and avoided being picked off", "That's the process: earn spread, limit risk, avoid adverse selection."],
-        d: [["It guessed the market's direction correctly", "Market making isn't about forecasting direction."], ["It held as much inventory as possible", "Large inventory is large risk."]] }])
+        d: [["It guessed the market's direction correctly", "Market making isn't about forecasting direction."], ["It held as much inventory as possible", "Large inventory is large risk."]] }]),
+    // ---------- Top-up to 50 families (D44) ----------
+    tf("1.4-50", 1, [
+      ["A market maker is a kind of dealer: it trades from its own inventory.", true, "It buys into and sells from its own stock of shares."],
+      ["A market maker only matches other people's orders and never owns shares.", false, "That's closer to a broker. Market makers trade from their own inventory."]]),
+    mc("1.4-51", 1, [
+      { q: "A customer buys 100 shares from a market maker. What happens to the market maker's inventory?", a: ["It goes down by 100 shares", "It sold them from its inventory."],
+        d: [["It goes up by 100 shares", "It sold, so its inventory shrinks."], ["It doesn't change", "Selling shares reduces inventory."]] },
+      { q: "A customer sells 100 shares to a market maker. What happens to the market maker's inventory?", a: ["It goes up by 100 shares", "It bought them into its inventory."],
+        d: [["It goes down by 100 shares", "It bought, so its inventory grows."], ["It doesn't change", "Buying shares adds to inventory."]] }]),
+    gen("1.4-52", 2, function (R) {
+      var k = R.pick([0, 200, 500, 1000]), a = R.pick([300, 400, 600, 800]), b = R.pick([100, 200, 500, 700]), end = k - a + b;
+      function inv(x) { return x >= 0 ? R.count(x) + " shares" : "Short " + R.count(-x) + " shares"; }
+      return { q: "A market maker starts the hour holding " + R.count(k) + " shares. Customers buy " + R.count(a) + " shares from it and sell it " + R.count(b) + ". What is its inventory now?",
+        a: [inv(end), "Start " + R.count(k) + ", minus " + R.count(a) + " sold to customers, plus " + R.count(b) + " bought = " + inv(end) + "."],
+        d: R.uniq(inv(end), [[inv(k + a - b), "Customers buying from it lowers its inventory; customers selling raises it."], [inv(k), "Its trades changed the inventory."], [inv(a + b), "That adds both sides together."]]) };
+    }),
+    tf("1.4-53", 2, [
+      ["A wider spread earns more per trade but can drive customers to other market makers.", true, "Customers go to whoever quotes better prices."],
+      ["A market maker can widen its spread as much as it likes without losing business.", false, "Competitors quoting tighter prices win the trades."]]),
+    mc("1.4-54", 2, [
+      { q: "Several market makers compete in the same stock. What does that usually do to its spread?", a: ["Narrows it", "Each competes by quoting better prices."],
+        d: [["Widens it", "Competition pushes spreads in."], ["Nothing", "Competition is a main reason spreads are tight."]] }]),
+    gen("1.4-55", 3, function (R) {
+      var s = R.pick([1, 2, 3, 5]) / 100, n = R.pick([100, 200, 500]), L = R.pick([50, 100, 150, 200, 300]), per = s * n, need = Math.ceil(L / per);
+      var right = need + " round trips";
+      return { q: "A market maker earns " + R.money(s, 2) + " a share per round trip, trading " + n + " shares each time. It just lost " + R.money(L, 0) + " to a faster, better-informed trader. How many round trips does it take to earn that back?",
+        a: [right, "Each round trip earns " + R.money(s, 2) + " × " + n + " = " + R.money(per, 2) + "; " + R.money(L, 0) + " ÷ " + R.money(per, 2) + " ≈ " + need + "."],
+        d: R.uniq(right, [[Math.ceil(L / s) + " round trips", "That forgets the " + n + " shares per trip."], ["1 round trip", "One trip earns only " + R.money(per, 2) + "."], [Math.ceil(need / 10) + " round trips", "Too few; check the division."]]) };
+    }),
+    mc("1.4-56", 3, [
+      { q: "Why do many market makers try not to hold big positions overnight?", a: ["News overnight can move prices before they can trade", "They can't adjust quotes while the market is closed."],
+        d: [["It's illegal to hold shares overnight", "It isn't; it's a risk choice."], ["Exchanges charge rent on overnight positions", "There's no such charge."]] }]),
+    tf("1.4-57", 3, [
+      ["A market maker's displayed quote must generally be honored, up to the size shown.", true, "That firmness is what lets others trade on it quickly."],
+      ["A market maker can refuse to trade at its own displayed quote whenever it likes.", false, "Displayed quotes are generally firm up to their size."]]),
+    mc("1.4-58", 2, [
+      { q: "In the apple stall, why do you lower both prices when you're holding too many apples?", a: ["To sell more and buy fewer, shrinking your stock", "A lower ask sells more; a lower bid buys less."],
+        d: [["To earn a bigger spread", "Moving both prices together keeps the spread the same."], ["Because apples are always cheaper in the afternoon", "It's about your inventory, not the time of day."]] }]),
+    tf("1.4-59", 2, [
+      ["Ordinary customers trading for their own reasons are, on average, good business for a market maker.", true, "They pay the spread without knowing more than the market maker does."],
+      ["Every customer is equally risky for a market maker.", false, "Better-informed traders are riskier than ordinary customers."]]),
+    sc("1.4-60", 3, [
+      { s: "End of day on your market-making book: you earned $1,800 from the spread, lost $700 to two fast traders right after a news headline, and your remaining 1,000 shares fell $0.50 at the close.",
+        p: [{ q: "What was your inventory P&L?", a: ["−$500", "1,000 shares × −$0.50."], d: [["−$0.50", "That's per share."], ["−$700", "That's the loss to fast traders."]] },
+            { q: "What was your total P&L?", a: ["+$600", "$1,800 − $700 − $500."], d: [["+$1,800", "That's the spread only."], ["+$1,100", "That leaves out the inventory loss."]] },
+            { q: "Which part would you work on first?", a: ["The $700 lost to fast traders: update quotes faster after news", "Avoiding adverse selection protects the spread you earn."], d: [["Earning less spread", "The spread is the part that went well."], ["Holding more inventory overnight", "That adds risk, not profit."]] }] }]),
+    mc("1.4-61", 2, [
+      { q: "A market maker's quote is 15.00 / 15.06. Its inventory is balanced and the market is calm. A customer wants to sell. Where does the market maker buy?", a: ["At its bid, 15.00", "It buys at its bid and hopes to sell later at its ask."],
+        d: [["At its ask, 15.06", "It sells at the ask, not buys."], ["At the mid, 15.03", "Its quoted price to buy is the bid."]] }])
   ]);
 })(window.P0Bank);

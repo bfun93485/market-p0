@@ -122,6 +122,45 @@
             { q: "Which of the three is investing other people's money?", a: ["The mutual fund", "It pools savers' money."], d: [["The retail investor", "A retail investor uses their own money."], ["The market maker", "A market maker trades its own inventory to earn spreads."]] }] }]),
     mc("0.4-46", 3, [
       { q: "What's the main difference between a market maker and a mutual fund?", a: ["A market maker trades all day to earn spreads; a fund invests savers' money for the longer run", "Different jobs: one keeps markets moving, the other invests."],
-        d: [["There's no real difference", "Their goals and time frames are very different."], ["A mutual fund sets prices; a market maker doesn't", "Neither sets prices; trades do."]] }])
+        d: [["There's no real difference", "Their goals and time frames are very different."], ["A mutual fund sets prices; a market maker doesn't", "Neither sets prices; trades do."]] }]),
+    // ---------- Top-up to 50 families (D44) ----------
+    tf("0.4-50", 1, [
+      ["Nasdaq and the New York Stock Exchange are both U.S. stock exchanges.", true, "They're the two best known."],
+      ["Nasdaq is a government agency.", false, "Nasdaq is an exchange run by a company; the SEC is the government agency."]]),
+    mc("0.4-51", 1, [
+      { q: "What do an exchange's rules help ensure?", a: ["Everyone's orders are handled fairly under the same rules", "One set of rules for all is the point of a regulated marketplace."],
+        d: [["Every investor makes money", "Rules make trading fair, not profitable."], ["Prices never fall", "Prices move freely with buying and selling."]] }]),
+    tf("0.4-52", 2, [
+      ["Most stock trading today is electronic, with orders matched by computers.", true, "Trading floors still exist (the NYSE has one), but most trading is electronic."],
+      ["Most stock trades today are shouted out on a trading floor.", false, "Floors still exist, but almost all trading is electronic."]]),
+    mc("0.4-53", 2, [
+      { q: "Your app sends your order to a market maker instead of an exchange. Where does the trade happen?", a: ["Off-exchange, with the market maker", "That's part of the large share of trading done away from exchanges."],
+        d: [["On the NYSE trading floor", "The order never went to the exchange."], ["Inside the app's bank account", "The app is a broker; it passed the order to a market maker."]] }]),
+    mc("0.4-54", 2, [
+      { q: "Which pair is matched correctly?", a: ["Pension fund: retirement savings. Insurer: customers' premiums.", "Both are institutions investing money they'll need later."],
+        d: [["Hedge fund: open to everyone. Mutual fund: wealthy investors only.", "That's backwards: mutual funds are widely open; hedge funds are mostly for the wealthy."], ["Market maker: long-term investor. Retail investor: professional firm.", "Market makers trade all day; retail investors are individuals."]] }]),
+    tf("0.4-55", 2, [
+      ["An index fund buys the companies in an index instead of picking favorites.", true, "It follows the index's rules."],
+      ["An index fund's manager picks only the stocks they expect to rise most.", false, "That's an actively managed fund; an index fund follows an index."]]),
+    tf("0.4-56", 3, [
+      ["Retail investors' orders are often filled by large market makers rather than on an exchange.", true, "Many brokers route retail orders to wholesale market makers."],
+      ["U.S. retail orders must, by law, be sent to an exchange.", false, "Brokers may route them to off-exchange market makers, within the rules on getting a good price."]]),
+    mc("0.4-57", 3, [
+      { q: "Why might a broker route your order to a market maker off-exchange?", a: ["The market maker may fill it quickly, sometimes at a slightly better price than the best quote", "That's called price improvement."],
+        d: [["Exchanges don't accept small orders", "They do; routing is about speed and price."], ["Market makers guarantee you a profit", "No one guarantees profits."]] }]),
+    mc("0.4-58", 3, [
+      { q: "On an exchange, two buyers bid the same price. A seller arrives. Who usually trades first?", a: ["The one who bid first", "Most exchanges rank by price, then by time."],
+        d: [["The bigger firm", "Size doesn't jump the line at the same price."], ["Whoever the exchange picks at random", "There's a clear order: price, then time."]] }]),
+    gen("0.4-59", 2, function (R) {
+      var pick = R.pick(WHO), others = R.shuffle(WHO.filter(function (w) { return w !== pick; })).slice(0, 3);
+      function desc(w) { return w[2].charAt(0).toUpperCase() + w[2].slice(1); }
+      return { q: "Which description fits a " + pick[0].toLowerCase() + "?",
+        a: [desc(pick), "That's what " + an(pick[0]).toLowerCase() + " does."],
+        d: others.map(function (o) { return [desc(o), "That describes " + an(o[0]).toLowerCase() + "."]; }) };
+    }),
+    sc("0.4-60", 3, [
+      { s: "A hedge fund wants to sell 1 million shares of a mid-sized company. The stock usually trades about 2 million shares a day.",
+        p: [{ q: "Why not sell it all at once on the exchange?", a: ["It's half a day's trading; selling at once would push the price down hard", "A big sell order eats through the bids."], d: [["Exchanges forbid orders that big", "They don't; the problem is the price impact."], ["It would push the price up", "Heavy selling pushes prices down."]] },
+            { q: "What could a bank's sales and trading desk do?", a: ["Find buyers off-exchange or spread the sale over time", "Both limit how much the selling moves the price."], d: [["Ask the company to buy the shares back", "That's the company's decision, not a trading tool."], ["Cancel the order and wait a year", "There are better ways to handle a large sale."]] }] }])
   ]);
 })(window.P0Bank);

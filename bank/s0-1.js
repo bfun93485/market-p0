@@ -162,6 +162,31 @@
       ["Within one second, a stock can only trade at one single price.", false, "Many trades can happen in a second, at slightly different prices."]]),
     mc("0.1-47", 3, [
       { q: "A friend says: \"The stock went up, so the company must be doing better today.\" What's the best reply?", a: ["Not necessarily: buyers were more eager today, which may or may not reflect the business", "Price moves show trading pressure and changing views, not always a change in the business."],
-        d: [["Yes: price always tracks how the business is doing that day", "Prices move on many things besides the business, like big orders."], ["No: prices never relate to the business", "Over time, business results matter a lot to prices."]] }])
+        d: [["Yes: price always tracks how the business is doing that day", "Prices move on many things besides the business, like big orders."], ["No: prices never relate to the business", "Over time, business results matter a lot to prices."]] }]),
+    // ---------- Top-up to 50 families (D44) ----------
+    mc("0.1-50", 2, [
+      { q: "Your friend says a stock \"should\" be $100, but it trades at $70. What decides whether it ever reaches $100?", a: ["Future buyers and sellers, through the trades they agree on", "A view only moves the price if enough buyers act on it."],
+        d: [["Your friend's analysis", "An opinion doesn't set the price; trades do."], ["The company, once it agrees with your friend", "Companies don't set their trading price."]] }]),
+    tf("0.1-51", 2, [
+      ["After overnight news, a stock's first trade can jump straight to a new price, skipping the prices in between.", true, "That's called a gap: no trades happened at the prices in between."],
+      ["A stock always trades at every price on its way from $50 down to $45.", false, "Prices can gap, for example after overnight news."]]),
+    gen("0.1-52", 3, function (R) {
+      var up = Math.random() < 0.5, p = R.int(2000, 6000) / 100, list = [p];
+      for (var i = 0; i < 3; i++) list.push(Math.round((list[i] + (up ? 1 : -1) * R.pick([0.03, 0.04, 0.05, 0.06, 0.08])) * 100) / 100);
+      var buyers = ["Buyers: each trade happened at a higher price", "Eager buyers keep paying up, so trades climb."];
+      var sellers = ["Sellers: each trade happened at a lower price", "Eager sellers keep accepting less, so trades fall."];
+      return { q: "The last four trades in a stock were " + list.map(function (x) { return R.money(x, 2); }).join(", ") + ". Which side looks more eager?",
+        a: up ? buyers : sellers, d: [up ? [sellers[0], "The trades are climbing, not falling."] : [buyers[0], "The trades are falling, not climbing."], ["Neither: every share bought was sold, so you can't tell", "Equal shares change hands, but the direction of prices shows which side is giving in."]] };
+    }),
+    mc("0.1-53", 3, [
+      { q: "A stock last traded at $40, but right now no buyer will pay more than $35. If you must sell this second, what happens?", a: ["You'd sell near $35, well below the last trade", "The last trade is history; you can only sell to the buyers who are there now."],
+        d: [["You'd get $40, the last price", "Nobody is offering $40 right now."], ["Your trade waits until the price returns to $40", "If you sell now, you take the best price on offer."]] }]),
+    sc("0.1-54", 2, [
+      { s: "Resale tickets for a sold-out concert: the last ticket sold for $150. Then the band announces a surprise guest star.",
+        p: [{ q: "What probably happens to the next resale prices?", a: ["They rise, as more fans want tickets", "More eager buyers push the price up."], d: [["They stay at $150", "The last price doesn't hold when demand changes."], ["They fall back to the printed price", "The printed price stopped mattering long ago."]] },
+            { q: "Who sets those new prices?", a: ["Fans buying and selling tickets", "Each resale is a new agreement between a buyer and a seller."], d: [["The band", "The band sold the tickets once; resale prices are up to fans."], ["The company that printed the tickets", "Printers don't set resale prices."]] }] },
+      { s: "Resale tickets for a sold-out concert: the last ticket sold for $150. Then the headliner cancels and a less popular act replaces them.",
+        p: [{ q: "What probably happens to the next resale prices?", a: ["They fall, as fewer fans want tickets", "Eager sellers accept less."], d: [["They stay at $150", "The last price doesn't hold when demand changes."], ["They rise", "Less demand pushes prices down, not up."]] },
+            { q: "Who sets those new prices?", a: ["Fans buying and selling tickets", "Each resale is a new agreement between a buyer and a seller."], d: [["The venue", "The venue doesn't set resale prices."], ["The band's manager", "Managers don't set resale prices."]] }] }])
   ]);
 })(window.P0Bank);

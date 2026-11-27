@@ -132,6 +132,49 @@
             { q: "Who benefits from the jump?", a: ["Investors who bought at $20 and can sell near $26", "They bought at the IPO price and the market now pays more."], d: [["Kestrel Air", "Kestrel was paid at $20, so it gains nothing from the jump."], ["The stock exchange", "The exchange earns fees, not the price gain."]] }] }]),
     tf("0.3-46", 3, [
       ["Buying a share in the secondary market doesn't change the company's cash.", true, "The money goes to the investor who sold."],
-      ["Trading in the secondary market adds cash to the company every day.", false, "The company only gets cash when it sells new shares."]])
+      ["Trading in the secondary market adds cash to the company every day.", false, "The company only gets cash when it sells new shares."]]),
+    // ---------- Top-up to 50 families (D44) ----------
+    tf("0.3-50", 1, [
+      ["After its IPO, a company is \"public\": anyone can buy its shares through a broker.", true, "That's what going public means."],
+      ["After an IPO, only the company's employees can buy its shares.", false, "Public shares can be bought by anyone through a broker."]]),
+    mc("0.3-51", 1, [
+      { q: "Before its IPO, a company is usually described as…", a: ["Private", "Its shares are owned by founders and early investors and don't trade publicly."],
+        d: [["Bankrupt", "Private companies can be very healthy; bankrupt means unable to pay debts."], ["Delisted", "Delisted means removed from an exchange after being listed."]] }]),
+    gen("0.3-52", 3, function (R) {
+      var V = R.pick([1, 2, 4]), N = R.pick([100, 200]), P = V * 1000 / N, M = V * R.pick([0.25, 0.5]), m = M * 1000 / P, k = R.pick([100, 500, 1000]);
+      var right = R.money(k * P, 0), diluted = R.money(Math.round(k * P * N / (N + m)), 0);
+      return { q: "A company worth " + R.big(V * 1e9) + " has " + N + " million shares at " + R.money(P, 0) + ". It sells new shares at that same " + R.money(P, 0) + " price to raise " + R.big(M * 1e9) + ". You own " + k + " shares. Right after, ignoring what it does with the cash, what are your shares worth?",
+        a: [right, "Your slice shrinks, but the company now holds the new cash too: worth " + R.big((V + M) * 1e9) + " over " + (N + m) + " million shares is still " + R.money(P, 0) + " a share. Selling at a fair price doesn't cost you value."],
+        d: R.uniq(right, [[diluted, "That shrinks your slice but forgets the company gained the cash."], [R.money(k * P * 2, 0), "Nothing doubled; the company sold shares at their fair price."], ["$0, because you were diluted", "Dilution makes your slice smaller, not worthless."]]) };
+    }),
+    tf("0.3-53", 2, [
+      ["Selling new shares far below what they're worth hurts existing owners.", true, "New buyers get cheap slices of value that belonged to existing owners."],
+      ["The price at which a company sells new shares doesn't matter to existing owners.", false, "Selling cheaply transfers value from existing owners to the new buyers."]]),
+    mc("0.3-54", 2, [
+      { q: "Why do companies hire investment banks for an IPO?", a: ["To find investors and help set the price, for a fee", "Banks run the sale: marketing, collecting orders and pricing."],
+        d: [["Because banks must own the company afterwards", "Banks help sell the shares; they don't take over the company."], ["To guarantee the stock rises", "No one can guarantee that."]] }]),
+    mc("0.3-55", 2, [
+      { q: "A startup creates new shares to pay its employees as part of their pay. What happens to existing owners?", a: ["They're diluted, because new shares were created", "Any new shares shrink existing slices, whoever gets them."],
+        d: [["Nothing, because no cash came in", "Dilution is about the share count, not cash."], ["They own a bigger percentage", "More shares in total can only shrink their percentage."]] }]),
+    mc("0.3-56", 2, [
+      { q: "Which of these is NOT a reason a company goes public?", a: ["To guarantee its share price will rise", "Going public guarantees nothing about the price."],
+        d: [["To raise money for growth", "That's a main reason for an IPO."], ["To let early owners sell shares later", "Public shares are easier to sell, which matters to early owners."]] }]),
+    tf("0.3-57", 3, [
+      ["An IPO price is usually set the evening before trading starts, using the investor demand the banks collected.", true, "Banks gather orders first (book-building), then price the deal."],
+      ["A company's IPO price is set by the stock exchange with the first trade.", false, "The banks and the company set the IPO price; the first trade is investors trading with each other."]]),
+    gen("0.3-58", 3, function (R) {
+      var S = R.pick([10, 20, 25, 40]), P = R.pick([15, 18, 20, 24, 30]), Q = P + R.pick([3, 4, 5, 6, 8]), left = (Q - P) * S * 1e6;
+      return { q: "A company sells " + S + " million new shares in its IPO at " + R.money(P, 0) + ". On day one the stock trades at " + R.money(Q, 0) + ". Roughly how much more could it have raised at the day-one price?",
+        a: [R.big(left), "(" + R.money(Q, 0) + " − " + R.money(P, 0) + ") × " + S + " million = " + R.big(left) + ". That's often called money left on the table."],
+        d: R.uniq(R.big(left), [[R.big(Q * S * 1e6), "That's the total at the day-one price, not the difference."], [R.big(P * S * 1e6), "That's what it actually raised."], [R.money(Q - P, 0), "That's per share; multiply by " + S + " million."]]) };
+    }),
+    mc("0.3-59", 3, [
+      { q: "A company sells new shares at $20 while its stock trades at $25. Who gains at the existing owners' expense?", a: ["The buyers of the new shares", "They get slices worth about $25 for $20."],
+        d: [["The existing owners", "They give up value: new slices are sold too cheaply."], ["Nobody", "Selling below market moves value to the new buyers."]] }]),
+    sc("0.3-60", 2, [
+      { s: "Driftwood Media is private. Its 3 founders own all 9 million shares, 3 million each. It sells 3 million new shares in an IPO at $15.",
+        p: [{ q: "How much does Driftwood raise, before fees?", a: ["$45 million", "3 million × $15."], d: [["$135 million", "That uses all 9 million shares; only 3 million are new."], ["$15 million", "That forgets the 3 million shares."]] },
+            { q: "What percentage does each founder own after the IPO?", a: ["25%", "3 million of 12 million shares."], d: [["33.3%", "That was before the IPO."], ["30%", "3 million ÷ 12 million is 25%."]] },
+            { q: "What percentage do the new investors own together?", a: ["25%", "3 million of 12 million shares."], d: [["33.3%", "That divides by the old 9 million."], ["75%", "That's what the three founders own together."]] }] }])
   ]);
 })(window.P0Bank);

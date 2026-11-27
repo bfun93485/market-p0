@@ -136,6 +136,53 @@
             { q: "A client says the stock \"crashed 2%\" at the open. What's the best explanation?", a: ["The dividend left the company, so the price dropped by about that amount", "$1.20 is 2% of $60: no crash, just the ex-dividend drop."], d: [["The company announced bad news", "Nothing else changed overnight."], ["The exchange made a pricing mistake", "Exchanges don't set prices; this is a normal ex-dividend move."]] }] }]),
     tf("0.6-46", 3, [
       ["Total return is the fair way to compare a stock that pays dividends with one that doesn't.", true, "It counts both ways of earning."],
-      ["Comparing price changes alone is fair even when only one of the stocks pays dividends.", false, "Price-only comparisons ignore the dividends, which are part of the return."]])
+      ["Comparing price changes alone is fair even when only one of the stocks pays dividends.", false, "Price-only comparisons ignore the dividends, which are part of the return."]]),
+    // ---------- Top-up to 50 families (D44) ----------
+    tf("0.6-50", 1, [
+      ["Dividends are paid per share, so owning more shares means receiving more.", true, "For example, $0.50 a share on 100 shares is $50."],
+      ["Every shareholder receives the same dividend, however many shares they own.", false, "Dividends are per share, so they scale with how many you own."]]),
+    gen("0.6-51", 1, function (R) {
+      var n = R.pick([10, 20, 40, 50, 100, 200]), dv = R.pick([0.25, 0.4, 0.5, 0.75, 1, 1.5]);
+      var right = R.money(n * dv, 2);
+      return { q: "You own " + n + " shares. The company pays a dividend of " + R.money(dv, 2) + " a share. How much do you receive?",
+        a: [right, n + " × " + R.money(dv, 2) + " = " + right + "."],
+        d: R.uniq(right, [[R.money(dv, 2), "That's per share; you own " + n + "."], [R.money(n * dv * 10, 2), "Ten times too much; check the decimals."], [R.money(n + dv, 2), "That adds instead of multiplying."]]) };
+    }),
+    tf("0.6-52", 2, [
+      ["A company can keep paying a dividend in a year when its profits fell.", true, "Dividends are a choice; it can pay from cash it holds."],
+      ["A company may only pay dividends in years when its profits rise.", false, "There's no such rule; it's the board's decision."]]),
+    mc("0.6-53", 2, [
+      { q: "Which of these is a realized gain?", a: ["The $200 you locked in by selling your shares", "Realized means you sold, so the gain is now cash."],
+        d: [["The $200 your shares rose today, still held", "That's unrealized: it can still change."], ["The gain you expect next year", "That hasn't happened at all."]] }]),
+    gen("0.6-54", 2, function (R) {
+      var p0 = R.int(30, 90), d = R.pick([1, 1.5, 2, 2.5, 3]), be = p0 - d, right = R.money(be, 2);
+      return { q: "You bought a stock at " + R.money(p0, 2) + " and have received " + R.money(d, 2) + " a share in dividends. At what selling price would your total return be exactly zero?",
+        a: [right, "The dividends already returned " + R.money(d, 2) + ", so selling at " + R.money(p0, 2) + " − " + R.money(d, 2) + " = " + right + " breaks even."],
+        d: R.uniq(right, [[R.money(p0, 2), "That ignores the dividends you've already received."], [R.money(p0 + d, 2), "Dividends lower the break-even price, not raise it."], [R.money(p0 - 2 * d, 2), "You received the dividends once, not twice."]]) };
+    }),
+    mc("0.6-55", 2, [
+      { q: "A company raises its yearly dividend from $1.00 to $1.20 a share. What does that tell you?", a: ["It's choosing to pay shareholders more cash, with no promise about the future", "Dividends can be raised, cut or stopped."],
+        d: [["The stock must now rise 20%", "Prices don't have to follow the dividend."], ["Its bonds now pay 20% more interest", "Bond interest is fixed by the bond's terms."]] }]),
+    tf("0.6-56", 3, [
+      ["Reinvesting dividends buys more shares, which can then earn dividends of their own.", true, "That snowball is called compounding."],
+      ["Reinvested dividends can't add anything to future returns.", false, "Extra shares earn their own dividends and price changes."]]),
+    gen("0.6-57", 3, function (R) {
+      var n = R.pick([100, 200, 300, 400]), dv = R.pick([1, 2]), p = R.pick([20, 25, 40, 50]), buy = n * dv / p;
+      var right = (Math.round(buy * 100) / 100) + " shares";
+      return { q: "You own " + n + " shares. The company pays " + R.money(dv, 2) + " a share, and you reinvest it all at " + R.money(p, 2) + " a share. How many extra shares do you buy?",
+        a: [right, "Dividends: " + n + " × " + R.money(dv, 2) + " = " + R.money(n * dv, 2) + ", ÷ " + R.money(p, 2) + " = " + right + "."],
+        d: R.uniq(right, [[(n * dv) + " shares", "That's the dividend in dollars, not shares."], [(Math.round(buy * 10 * 100) / 100) + " shares", "Ten times too many; check the division."], [(Math.round(n / p * 100) / 100) + " shares", "That forgets the dividend per share."]]) };
+    }),
+    mc("0.6-58", 3, [
+      { q: "Two companies earn the same profit. A pays all of it out as dividends; B reinvests all of it and pays nothing. Which statement is fair?", a: ["Neither is automatically better; it depends on what B earns on the reinvested money", "Reinvesting pays off only if it earns good returns (a later lesson)."],
+        d: [["A is always better: cash now beats everything", "Reinvested profits can grow the business more."], ["B is always better: growth beats everything", "Growth only adds value if it earns enough on the money."]] }]),
+    tf("0.6-59", 2, [
+      ["Total return can be negative even when a stock paid dividends.", true, "If the price falls by more than the dividends."],
+      ["A stock that pays dividends always has a positive total return.", false, "A big enough price fall outweighs the dividends."]]),
+    sc("0.6-60", 3, [
+      { s: "A client bought 200 shares of Granite Freight at $50. Over the year they received $1.00 a share in dividends, and the stock ended the year at $47.",
+        p: [{ q: "What was the price change on the whole position?", a: ["−$600", "200 × −$3."], d: [["−$3", "That's per share."], ["+$200", "That's the dividends, not the price change."]] },
+            { q: "How much did the client receive in dividends?", a: ["$200", "200 × $1.00."], d: [["$1", "That's per share."], ["$600", "That's the price loss."]] },
+            { q: "What was the total return?", a: ["−$400, about −4%", "−$600 + $200 = −$400, on $10,000 invested."], d: [["−$600, about −6%", "That leaves out the dividends."], ["+$200, about +2%", "That leaves out the price fall."]] }] }])
   ]);
 })(window.P0Bank);

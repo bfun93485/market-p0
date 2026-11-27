@@ -130,6 +130,49 @@
     sc("0.5-46", 3, [
       { s: "Granite Freight has both stock and bonds held by investors. A recession hits; its profits drop sharply, but so far it keeps paying its bond interest.",
         p: [{ q: "Which is likely to fall more in price?", a: ["The stock", "Owners take the profit drop directly; lenders still get paid."], d: [["The bonds", "The bond promise is still being kept."], ["They fall by the same amount", "They carry different risks."]] },
-            { q: "Months later, Granite misses a bond interest payment. What is that called?", a: ["A default", "Breaking a borrowing promise is a default."], d: [["A dividend cut", "Dividends are owner payments; this is a missed loan payment."], ["A stock split", "A split changes share counts; it has nothing to do with debt."]] }] }])
+            { q: "Months later, Granite misses a bond interest payment. What is that called?", a: ["A default", "Breaking a borrowing promise is a default."], d: [["A dividend cut", "Dividends are owner payments; this is a missed loan payment."], ["A stock split", "A split changes share counts; it has nothing to do with debt."]] }] }]),
+    // ---------- Top-up to 50 families (D44) ----------
+    mc("0.5-50", 1, [
+      { q: "What is a bond's face value?", a: ["The amount the borrower repays at maturity", "Also called par or principal."],
+        d: [["The interest it pays each year", "That's the coupon."], ["What the bond trades for today", "That's its market price, which can differ from face value."]] }]),
+    tf("0.5-51", 1, [
+      ["A bond's \"coupon\" is the interest it pays.", true, "The name comes from paper bonds whose coupons were clipped and cashed."],
+      ["A bond's coupon is a discount voucher for the issuer's products.", false, "It's the interest payment."]]),
+    gen("0.5-52", 2, function (R) {
+      var F = R.pick([1000, 2000, 5000]), c = R.pick([2, 2.5, 3, 4, 4.5, 5, 6]), I = F * c / 100;
+      var right = c + "%";
+      return { q: "A " + R.money(F, 0) + " bond pays " + R.money(I, 2) + " of interest a year. What is its coupon rate?",
+        a: [right, R.money(I, 2) + " ÷ " + R.money(F, 0) + " = " + c + "%."],
+        d: R.uniq(right, [[(c * 10) + "%", "Ten times too high; check the division."], [(c / 10) + "%", "Ten times too low; check the division."], [(c * 2) + "%", "That doubles the payment."]]) };
+    }),
+    tf("0.5-53", 2, [
+      ["A bond with 10 years left usually swings more in price when interest rates change than one with 1 year left.", true, "It locks in its rate for longer, so rate changes matter more."],
+      ["Short-term bonds move more in price than long-term bonds when rates change.", false, "Long-term bonds usually move more."]]),
+    mc("0.5-54", 2, [
+      { q: "Which is the riskiest loan for a lender?", a: ["Lending to a company already struggling to pay its bills", "The bigger the chance of not being repaid, the riskier the loan."],
+        d: [["Lending to the U.S. government", "Seen as one of the safest borrowers."], ["Lending to a profitable company with little debt", "Strong finances make repayment likely."]] }]),
+    mc("0.5-55", 2, [
+      { q: "A company has $100 million available this year and owes $20 million of interest. Who must be paid?", a: ["Lenders, their $20 million of interest", "Interest is an obligation; dividends to owners are optional."],
+        d: [["Shareholders first, with a dividend", "Dividends are optional and come after obligations."], ["Whoever asks first", "Obligations to lenders come before payouts to owners."]] }]),
+    gen("0.5-56", 3, function (R) {
+      var c = R.pick([2, 3, 4, 5, 6, 7]), r; do { r = R.pick([2, 3, 4, 5, 6, 7]); } while (r === c);
+      var rises = r < c;
+      return { q: "You own a bond paying " + c + "% a year. Similar new bonds now pay " + r + "%. What happens to your bond's market price?",
+        a: rises ? ["It rises", "Its " + c + "% payments beat the new " + r + "%, so buyers will pay more for it."] : ["It falls", "Its " + c + "% payments trail the new " + r + "%, so buyers will only take it at a lower price."],
+        d: [rises ? ["It falls", "It pays more than new bonds, so it's worth more, not less."] : ["It rises", "It pays less than new bonds, so it's worth less."], ["It stays exactly at face value", "Bond prices move as rates change."]] };
+    }),
+    tf("0.5-57", 3, [
+      ["U.S. Treasury bonds are among the safest bonds, because the U.S. government is very likely to pay.", true, "That's why they're a benchmark for low-risk lending."],
+      ["U.S. Treasury bond prices never change.", false, "Their prices move with interest rates."]]),
+    mc("0.5-58", 3, [
+      { q: "What are \"junk bonds\", also called high-yield bonds?", a: ["Bonds from riskier borrowers that pay higher interest", "Lower credit ratings mean more risk, so lenders demand more interest."],
+        d: [["Bonds that pay no interest at all", "Those are zero-coupon bonds, which pay at maturity instead."], ["Bonds only governments issue", "Junk bonds usually come from riskier companies."]] }]),
+    tf("0.5-59", 2, [
+      ["Many bonds pay their interest on a fixed schedule, such as every six months.", true, "U.S. Treasury notes and bonds, for example, pay twice a year."],
+      ["Every bond pays all of its interest in one lump at the end.", false, "Most pay regularly; zero-coupon bonds are the exception, selling at a discount instead."]]),
+    sc("0.5-60", 3, [
+      { s: "You hold a $1,000 bond paying 4% a year with 5 years left. Overnight, interest rates jump and similar new bonds pay 6%.",
+        p: [{ q: "What happens to your bond's market price?", a: ["It falls", "Buyers can get 6% elsewhere, so they'll pay less for 4%."], d: [["It rises", "Higher new rates make your bond less attractive."], ["It stays at $1,000", "Bond prices move when rates change."]] },
+            { q: "If you hold it to maturity and the issuer pays as promised, what do you get?", a: ["$40 a year, then $1,000 back", "The promise doesn't change; only the market price did."], d: [["$60 a year", "Your bond's coupon is fixed at 4%."], ["Less than $1,000 back, because rates rose", "You're repaid the full face value at maturity."]] }] }])
   ]);
 })(window.P0Bank);
