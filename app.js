@@ -242,7 +242,7 @@
     statsEl.innerHTML =
       '<span class="chip' + (s.streak ? "" : " off") + '" title="Day streak">' + art("fire", 22) + '<span class="num">' + s.streak + '</span><span class="sr-only">-day streak</span></span>' +
       '<span class="chip" title="XP">' + art("bolt", 22) + '<span class="num">' + state.xp + '</span><span class="sr-only">XP</span></span>' +
-      '<span class="chip" title="Rank">' + art(r.cur.art, 22) + esc(r.cur.name) + "</span>" +
+      '<span class="chip rank-chip" title="Rank: ' + esc(r.cur.name) + '">' + art(r.cur.art, 22) + '<span class="rank-text">' + esc(r.cur.name) + "</span></span>" +
       '<button type="button" class="chip" data-action="sound" aria-pressed="' + state.soundOn + '" aria-label="Sound ' +
       (state.soundOn ? "on" : "off") + '">' + icon(state.soundOn ? "sound" : "mute", 20) + "</button>" +
       '<button type="button" class="chip" data-action="about" id="about-btn" aria-label="About, terms and reset">' + icon("info", 20) + "</button>";
@@ -333,12 +333,26 @@
       Sound.play("wrong");
       return;
     }
-    if (state.xp > 0 && !window.confirm("Replace the progress on this device (" + state.xp + " XP) with the copied progress (" + s.xp + " XP)?")) return;
     delete s.installHidden; delete s.persistAsked; // device-specific choices start fresh on the new device
-    state = s; save();
-    closeSheet(); renderHome();
-    toast("Progress restored: " + s.xp + " XP", "sparkles"); Sound.play("correct");
-    maybeProtect();
+    function apply() {
+      state = s; save();
+      closeSheet(); renderHome();
+      toast("Progress restored: " + s.xp + " XP", "sparkles"); Sound.play("correct");
+      maybeProtect();
+    }
+    if (state.xp > 0) {
+      askConfirm("Replace this device's progress?", "This device has " + state.xp + " XP. The copied progress has " + s.xp +
+        " XP. The progress on this device will be replaced.", "Replace", "Keep this device's", apply);
+    } else apply();
+  }
+
+  // In-app "are you sure?" box (D41: the browser's own confirm box is white and can't be styled)
+  var confirmYes = null;
+  function askConfirm(title, text, yesLabel, noLabel, onYes) {
+    confirmYes = onYes;
+    openSheet('<p class="label">Please confirm</p><h2 id="sheet-title">' + esc(title) + '</h2><p class="small confirm-text">' + esc(text) + "</p>" +
+      '<button type="button" class="btn btn-danger wide" data-action="confirm-yes">' + esc(yesLabel) + "</button>" +
+      '<button type="button" class="btn btn-secondary wide" data-action="closesheet" id="confirm-no">' + esc(noLabel) + "</button>", "#confirm-no");
   }
 
   // Ask the browser to keep this site's storage, once there's progress worth keeping (first mastery), or at every start in the
@@ -950,13 +964,15 @@
       case "consent-decline": Sound.play("tap"); openConsent(true); break;
       case "consent-back": Sound.play("tap"); openConsent(false); break;
       case "reset":
-        if (window.confirm("Reset all progress saved in this browser? This can't be undone.")) {
-          try { localStorage.removeItem(STORE_KEY); } catch (err) { /* ignore */ }
-          state = defaultState();
-          if (sheetOpen) closeSheet();
-          renderHome();
-        }
+        askConfirm("Reset your progress?", "This deletes all progress saved in this browser: XP, streak, ranks and mastered lessons. It can't be undone.",
+          "Reset progress", "Keep my progress", function () {
+            try { localStorage.removeItem(STORE_KEY); } catch (err) { /* ignore */ }
+            state = defaultState();
+            closeSheet();
+            renderHome();
+          });
         break;
+      case "confirm-yes": { var f = confirmYes; confirmYes = null; if (f) f(); break; }
     }
   });
 
