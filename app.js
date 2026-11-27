@@ -124,7 +124,7 @@
     var skills = {};
     C.skills.forEach(function (sk) { skills[sk.id] = freshSkill(); });
     return { v: 1, xp: 0, skills: skills, days: [], goalDays: [], xpDays: {}, soundOn: true, bestCombo: 0,
-      stall: { plays: 0, best: null, debriefs: [] }, seen: {} };
+      stall: { plays: 0, best: null, debriefs: [] }, seen: {}, tough: {} };
   }
   // Checks saved progress (from this browser, or a pasted progress code) and fills in anything missing; null if unusable.
   function normalize(s) {
@@ -138,6 +138,7 @@
     s.bestCombo = s.bestCombo || 0;
     s.stall = s.stall && typeof s.stall === "object" ? s.stall : { plays: 0, best: null, debriefs: [] };
     s.seen = s.seen && typeof s.seen === "object" ? s.seen : {};
+    s.tough = s.tough && typeof s.tough === "object" ? s.tough : {};
     return s;
   }
   function load() {
@@ -334,11 +335,11 @@
 
   // In-app "are you sure?" box (D41: the browser's own confirm box is white and can't be styled)
   var confirmYes = null;
-  function askConfirm(title, text, yesLabel, noLabel, onYes) {
+  function askConfirm(title, text, yesLabel, noLabel, onYes, returnId, yesClass) { // yesClass: red by default, for undoable actions
     confirmYes = onYes;
     openSheet('<p class="label">Please confirm</p><h2 id="sheet-title">' + esc(title) + '</h2><p class="small confirm-text">' + esc(text) + "</p>" +
-      '<button type="button" class="btn btn-danger wide" data-action="confirm-yes">' + esc(yesLabel) + "</button>" +
-      '<button type="button" class="btn btn-secondary wide" data-action="closesheet" id="confirm-no">' + esc(noLabel) + "</button>", "#confirm-no");
+      '<button type="button" class="btn ' + (yesClass || "btn-danger") + ' wide" data-action="confirm-yes">' + esc(yesLabel) + "</button>" +
+      '<button type="button" class="btn btn-secondary wide" data-action="closesheet" id="confirm-no">' + esc(noLabel) + "</button>", "#confirm-no", returnId);
   }
 
   // Ask the browser to keep this site's storage, once there's progress worth keeping (first mastery), or at every start in the
@@ -442,11 +443,16 @@
       "</section>";
     html += '<div id="install-slot">' + installCardHTML() + "</div>";
     if (due.length) {
-      html += '<section class="review-row">' + art("bolt", 40) + '<div><p class="t">' + due.length + " quick review" + (due.length > 1 ? "s" : "") +
-        ' ready</p><p class="small">Spaced reviews lock in what you learned.</p></div><button type="button" class="btn btn-primary small" data-action="review">Review</button></section>';
+      html += '<section class="review-row">' + art("bolt", 40) + '<div><p class="t">Review ready: ' + due.length + " lesson" + (due.length > 1 ? "s" : "") +
+        ' due</p><p class="small">Mixed with questions from your other lessons, so they all stay fresh.</p></div><button type="button" class="btn btn-primary small" data-action="review">Review</button></section>';
     } else if (anyMastered()) {
       html += '<section class="review-row">' + art("brain", 40) + '<div><p class="t">No reviews due</p>' +
         '<p class="small">Mastered skills come back after 1, 3, 7 and 16 days.</p></div><button type="button" class="btn btn-secondary small" data-action="practice">Practice</button></section>';
+    }
+    if (toughCount() >= TOUGH_SHOW) {
+      html += '<section class="review-row">' + art("target", 40) + '<div><p class="t">Toughest questions</p><p class="small">' + toughCount() +
+        " you missed, asked a new way. Right twice in a row clears one.</p></div>" +
+        '<button type="button" class="btn btn-secondary small" data-action="tough">Revisit</button></section>';
     }
     var cur = currentId();
     UNITS.forEach(function (u) { html += unitHTML(u, cur); });
@@ -681,10 +687,17 @@
           html += '<div class="dock good" role="status"><p class="dock-title">' + icon("check", 22) + (revised ? "You got there!" : "Great explanation!") + "</p><p>" +
             (revised ? "Your revised answer covers the key ideas" : "You covered the key ideas") + (L.firstTime ? " · +" + XP.explain + " XP" : "") +
             '.</p><button type="button" class="btn btn-primary" data-action="next" id="continue">Continue</button></div>';
+        } else if (L.explainDone === "self") {
+          html += '<div class="dock good" role="status"><p class="dock-title">' + icon("check", 22) + "Marked right by you</p><p>" +
+            "Counted as right, without XP. The checker looks for key ideas and can miss unusual wording.</p>" +
+            '<button type="button" class="btn btn-primary" data-action="next" id="continue">Continue</button></div>';
         } else {
+          // D46: after a real attempt (not a mix-up), the learner can say the checker missed their wording
+          var canSelfMark = !L.explainAsked && R && !R.wrong;
           html += '<div class="dock bad" role="status"><p class="dock-title">' + icon("cross", 22) + "Not yet</p><p>" +
             (L.explainAsked ? "Here's the full answer, so this one counts as missed. " : "You covered " + foundN + " of " + total + " key ideas, so this one counts as missed. ") +
             "Compare with the model answer: the ideas with an empty circle are the ones to add next time.</p>" +
+            (canSelfMark ? '<p class="selfmark"><button type="button" class="linkbtn" data-action="explainself">I think I covered this</button></p>' : "") +
             '<button type="button" class="btn btn-primary" data-action="next" id="continue">Continue</button></div>';
         }
       }
@@ -767,6 +780,7 @@
     var xpNow = ok && !item.retry && L.firstTime;
     if (xpNow) { L.xpFloat = "+" + XP.practice + " XP"; give(XP.practice, null); }
     var comboHit = scoreAnswer(ok);
+    recordResult(item, ok);
     if (xpNow && !comboHit) Sound.later("xp", 230); // the coin follows the "correct" chime
     if (!ok && !item.retry) L.queue.push(retryItem(item, usedFams(L))); // the same idea comes back, asked another way
     renderLesson("#continue");
@@ -813,6 +827,20 @@
     else scoreAnswer(false);
   }
 
+  // D46: the checker can miss unusual but correct wording, so after a miss the learner may count it as right, after one more
+  // look at the key ideas. It counts toward accuracy but earns no XP, and the combo stays reset.
+  function selfMark() {
+    var L = lesson, rub = window.P0_RUBRICS[L.sk.id];
+    askConfirm("Count it as right?", "Only if your answer covers each key idea: " + rub.concepts.map(function (c) { return c.label; }).join("; ") +
+      ". Self-marked answers count toward accuracy but earn no XP.", "Yes, I covered them", "Not really", function () {
+      closeSheet();
+      L.explainDone = "self"; L.right++;
+      state.selfMarks = (state.selfMarks || 0) + 1; save();
+      Sound.play("correct");
+      renderLesson("#continue");
+    }, "continue", "btn-primary");
+  }
+
   function startChecks() {
     var L = lesson;
     L.checks = checkItems(L.sk.id, usedFams(L)); // fresh Applied questions on every attempt
@@ -827,6 +855,7 @@
     var ok = !!L.checks[L.ci].q.o[i].ok;
     if (ok) L.correct++;
     scoreAnswer(ok);
+    recordResult(L.checks[L.ci], ok);
     renderLesson("#continue");
   }
 
@@ -895,24 +924,68 @@
     return true;
   }
 
-  // ---------- review ----------
-  function startReview(extra) {
-    var pool = extra ? C.skills.filter(function (sk) { return state.skills[sk.id].mastered; }) : dueSkills();
-    if (!pool.length) { renderHome(); return; }
-    if (extra) pool = shuffle(pool).slice(0, 5);
-    review = {
-      extra: extra, i: 0, picked: null, correct: 0, done: false, combo: 0,
-      items: pool.map(function (sk) {
-        // Spaced reviews climb: Applied at first, Desk-level once a review has been passed; a miss resets the stage,
-        // so the next review steps back down to Applied. Extra practice mixes both.
-        var st = state.skills[sk.id], levels = extra ? [2, 3] : st.stage >= 1 ? [3] : [2];
-        var fam = BANK.select(sk.id, { levels: levels, n: 1, recent: recentFor(sk.id) })[0];
-        var it = BANK.draw(sk.id, fam)[0];
-        markSeen([it]);
-        it.sk = sk;
-        return it;
-      })
-    };
+  // ---------- review (D47-D48) ----------
+  // Spaced reviews interleave lessons: due skills first, then "mixed-in" questions from other mastered lessons up to
+  // REVIEW_MIN, ordered so the same lesson doesn't come twice in a row. Mixed-in questions don't change the schedule or give XP.
+  // "Toughest questions" revisits the families a learner has missed, asked a new way; right twice in a row clears one.
+  var REVIEW_MIN = 5, EXTRA_SIZE = 6, TOUGH_MAX = 6, TOUGH_SHOW = 2;
+  function reviewItem(sk, levels, extraFields) {
+    var fam = BANK.select(sk.id, { levels: levels, n: 1, recent: recentFor(sk.id) })[0];
+    var it = BANK.draw(sk.id, fam)[0];
+    it.sk = sk;
+    if (extraFields) for (var k in extraFields) it[k] = extraFields[k];
+    return it;
+  }
+  function interleave(items) {
+    var a = shuffle(items);
+    for (var i = 1; i < a.length; i++) {
+      if (a[i].sk.id !== a[i - 1].sk.id) continue;
+      for (var j = i + 1; j < a.length; j++) if (a[j].sk.id !== a[i - 1].sk.id) { var t = a[i]; a[i] = a[j]; a[j] = t; break; }
+    }
+    return a;
+  }
+  function masteredSkills() { return C.skills.filter(function (sk) { return state.skills[sk.id].mastered; }); }
+  function toughCount() { return Object.keys(state.tough).length; }
+  // Record every answer to a bank question: misses join the "toughest" list; two right in a row clear it. Returns "cleared".
+  function recordResult(it, ok) {
+    if (!it || !it.fam || it.setup) return null; // scenario parts are revisited through their lesson, not one by one
+    var t = state.tough, e = t[it.fam], out = null;
+    if (!ok) { e = e || { s: it.skill, m: 0, r: 0 }; e.m++; e.r = 0; e.vi = it.vi; e.t = today(); t[it.fam] = e; }
+    else if (e) { e.r++; if (e.r >= 2) { delete t[it.fam]; out = "cleared"; } }
+    else return null;
+    save();
+    return out;
+  }
+  function toughItems() {
+    var list = Object.keys(state.tough).map(function (f) { var e = state.tough[f]; return { f: f, s: e.s, m: e.m, t: e.t || "", vi: e.vi }; })
+      .sort(function (a, b) { return b.m - a.m || (a.t < b.t ? -1 : a.t > b.t ? 1 : 0); }).slice(0, TOUGH_MAX);
+    var out = [];
+    list.forEach(function (e) {
+      var fam = BANK.family(e.s, e.f), sk = skillById(e.s);
+      if (!fam || !sk) { delete state.tough[e.f]; return; }
+      var it = BANK.draw(e.s, fam, e.vi)[0]; // a different variant from the one that was missed, when there is one
+      it.sk = sk;
+      out.push(it);
+    });
+    return out;
+  }
+  function startReview(mode) { // "due" (spaced review), "extra" (practice) or "tough" (toughest questions)
+    var items = [];
+    if (mode === "tough") items = toughItems();
+    else if (mode === "extra") items = shuffle(masteredSkills()).slice(0, EXTRA_SIZE).map(function (sk) { return reviewItem(sk, [2, 3]); });
+    else {
+      var due = dueSkills(), dueIds = due.map(function (sk) { return sk.id; });
+      // Spaced reviews climb: Applied at first, Desk-level once a review has been passed; a miss resets the stage,
+      // so the next review steps back down to Applied.
+      items = due.map(function (sk) { return reviewItem(sk, state.skills[sk.id].stage >= 1 ? [3] : [2]); });
+      shuffle(masteredSkills().filter(function (sk) { return dueIds.indexOf(sk.id) < 0; }))
+        .slice(0, Math.max(0, REVIEW_MIN - items.length))
+        .forEach(function (sk) { items.push(reviewItem(sk, [2, 3], { mix: true })); });
+    }
+    if (!items.length) { renderHome(); return; }
+    markSeen(items);
+    review = { mode: mode, extra: mode !== "due", tough: mode === "tough", i: 0, picked: null, correct: 0, cleared: 0, done: false, combo: 0,
+      items: mode === "tough" ? items : interleave(items) };
     renderReview();
   }
 
@@ -925,14 +998,18 @@
       (R.combo >= 2 ? '<span class="combo">' + art("fire", 20) + "×" + R.combo + "</span>" : "") + "</div>";
     if (!R.done) {
       var it = R.items[R.i];
-      html += '<p class="lesson-name">' + art(SKILL_ART[it.sk.id], 20) + (R.extra ? "Extra practice" : "Spaced review") + " · " + (R.i + 1) + " of " + R.items.length + " · " + esc(it.sk.title) + "</p>";
-      html += questionHTML(it, R.picked, "ranswer", R.picked !== null && it.q.o[R.picked].ok && !R.extra ? "+" + XP.review + " XP" : null);
+      var kind = R.tough ? "Toughest questions" : R.extra ? "Extra practice" : it.mix ? "Mixed in" : "Spaced review";
+      html += '<p class="lesson-name">' + art(SKILL_ART[it.sk.id], 20) + kind + " · " + (R.i + 1) + " of " + R.items.length + " · " + esc(it.sk.title) + "</p>";
+      html += questionHTML(it, R.picked, "ranswer", R.picked !== null && it.q.o[R.picked].ok && !R.extra && !it.mix ? "+" + XP.review + " XP" : null);
       if (R.picked !== null) html += feedbackDock(it.q, R.picked, "rnext", R.i + 1 < R.items.length ? "Next" : "Finish");
     } else {
-      html += '<div class="results"><div class="medal calm">' + art(R.extra ? "brain" : "bolt", 64) + '</div><p class="kicker label">' + (R.extra ? "Practice done" : "Review done") + "</p><h2 class=\"num\">" +
-        R.correct + " of " + R.items.length + " right</h2><p>" +
-        (R.extra ? "Extra practice doesn't change your review schedule." : "Skills you got right come back later; ones you missed come back tomorrow.") + "</p></div>" +
-        plainDock("home", "Continue");
+      var mixed = R.items.filter(function (x) { return x.mix; }).length;
+      html += '<div class="results"><div class="medal calm">' + art(R.tough ? "target" : R.extra ? "brain" : "bolt", 64) + '</div><p class="kicker label">' +
+        (R.tough ? "Toughest questions done" : R.extra ? "Practice done" : "Review done") + "</p><h2 class=\"num\">" + R.correct + " of " + R.items.length + " right</h2><p>" +
+        (R.tough ? (R.cleared ? R.cleared + " cleared from your list. " : "") + (toughCount() ? toughCount() + " still on it: get one right twice in a row to clear it." : "Your list is empty. Nice work.")
+          : R.extra ? "Extra practice doesn't change your review schedule."
+          : "Skills you got right come back later; ones you missed come back tomorrow." + (mixed ? " The " + mixed + " mixed-in question" + (mixed > 1 ? "s" : "") + " from other lessons kept things fresh and didn't change your schedule." : "")) +
+        "</p></div>" + plainDock("home", "Continue");
     }
     app.innerHTML = html;
     renderTop();
@@ -943,8 +1020,9 @@
     var R = review;
     if (R.picked !== null) return;
     R.picked = i;
-    var it = R.items[R.i], ok = !!it.q.o[i].ok;
-    if (!R.extra) {
+    var it = R.items[R.i], ok = !!it.q.o[i].ok, scheduled = !R.extra && !it.mix;
+    if (recordResult(it, ok) === "cleared" && R.tough) R.cleared++;
+    if (scheduled) {
       var st = state.skills[it.sk.id];
       if (ok) { st.stage = Math.min(st.stage + 1, INTERVALS.length - 1); st.next = addDays(today(), INTERVALS[st.stage]); }
       else { st.stage = 0; st.next = addDays(today(), INTERVALS[0]); }
@@ -953,7 +1031,7 @@
     if (ok) {
       R.correct++; R.combo++;
       Sound.play("correct"); buzz(15);
-      if (!R.extra) { addXP(XP.review, null); Sound.later("xp", 230); }
+      if (scheduled) { addXP(XP.review, null); Sound.later("xp", 230); }
     } else { R.combo = 0; Sound.play("wrong"); buzz([30, 40, 30]); }
     renderReview("#continue");
   }
@@ -1005,13 +1083,15 @@
       case "answer": answerPractice(+el.getAttribute("data-i")); break;
       case "explaincheck": checkExplanation(); break;
       case "explainmodel": explainMissed(true); renderLesson("#continue"); break;
+      case "explainself": selfMark(); break;
       case "startcheck": startChecks(); break;
       case "check": answerCheck(+el.getAttribute("data-i")); break;
       case "recards": lesson.phase = "card"; lesson.card = 0; lesson.recards = true; renderLesson(); break;
       case "chest": openChest(); break;
       case "closecel": closeCelebration(); break;
-      case "review": startReview(false); break;
-      case "practice": startReview(true); break;
+      case "review": startReview("due"); break;
+      case "practice": startReview("extra"); break;
+      case "tough": startReview("tough"); break;
       case "ranswer": answerReview(+el.getAttribute("data-i")); break;
       case "rnext": reviewNext(); break;
       case "stall": startStall(); break;

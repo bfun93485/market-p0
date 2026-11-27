@@ -531,3 +531,6 @@ body { padding-bottom: env(safe-area-inset-bottom, 0px); }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+/* Explain it: "I think I covered this" under the Not yet result (D46) */
+.dock .selfmark { margin: -4px 0 10px; }
