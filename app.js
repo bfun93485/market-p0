@@ -124,7 +124,7 @@
     var skills = {};
     C.skills.forEach(function (sk) { skills[sk.id] = freshSkill(); });
     return { v: 1, xp: 0, skills: skills, days: [], goalDays: [], xpDays: {}, soundOn: true, bestCombo: 0,
-      stall: { plays: 0, best: null, debriefs: [] } };
+      stall: { plays: 0, best: null, debriefs: [] }, seen: {} };
   }
   // Checks saved progress (from this browser, or a pasted progress code) and fills in anything missing; null if unusable.
   function normalize(s) {
@@ -137,6 +137,7 @@
     if (s.soundOn === undefined) s.soundOn = true;
     s.bestCombo = s.bestCombo || 0;
     s.stall = s.stall && typeof s.stall === "object" ? s.stall : { plays: 0, best: null, debriefs: [] };
+    s.seen = s.seen && typeof s.seen === "object" ? s.seen : {};
     return s;
   }
   function load() {
@@ -288,7 +289,9 @@
 
   // A progress code is the saved progress as text, so it can be pasted into another browser, device or the Home Screen app.
   // It is checked like saved progress before it is used, and it never leaves the device unless the learner pastes it somewhere.
-  function progressCode() { return "P0:" + btoa(unescape(encodeURIComponent(JSON.stringify(state)))); }
+  function progressCode() { // the seen-question history stays on this device, which keeps the code short
+    return "P0:" + btoa(unescape(encodeURIComponent(JSON.stringify(state, function (k, v) { return k === "seen" ? undefined : v; }))));
+  }
   function readCode(raw) {
     var code = String(raw || "").replace(/\s+/g, "");
     if (code.indexOf("P0:") !== 0) return null;
@@ -488,10 +491,58 @@
     return "Master " + need.join(" and ") + " first";
   }
 
+  // ---------- question bank (D44): families of look-alike questions at three levels, drawn so they rarely repeat ----------
+  var BANK = window.P0Bank;
+  C.skills.forEach(function (sk) { // the original lesson questions join the bank: practice = Foundation, mastery = Applied
+    BANK.add(sk.id, sk.practice.map(function (q, i) { return BANK.raw(sk.id + "-p" + i, 1, q); })
+      .concat(sk.mastery.map(function (q, i) { return BANK.raw(sk.id + "-m" + i, 2, q); })));
+  });
+  var SEEN_KEEP = 60; // families remembered per skill, so new draws prefer what the learner hasn't seen lately
+  function recentFor(id) { return (state.seen && state.seen[id]) || []; }
+  function markSeen(items) {
+    items.forEach(function (it) {
+      var list = state.seen[it.skill] = (state.seen[it.skill] || []).filter(function (f) { return f !== it.fam; });
+      list.push(it.fam);
+      if (list.length > SEEN_KEEP) list.splice(0, list.length - SEEN_KEEP);
+    });
+    save();
+  }
+  function drawFamilies(id, fams) { var out = []; fams.forEach(function (f) { out = out.concat(BANK.draw(id, f)); }); return out; }
+  // Lesson practice: 3 Foundation questions plus one short desk scenario when the lesson has one.
+  function practiceItems(id) {
+    var recent = recentFor(id);
+    var items = drawFamilies(id, BANK.select(id, { levels: [1], n: 3, recent: recent }))
+      .concat(drawFamilies(id, BANK.select(id, { levels: [1, 2], n: 1, scenarios: true, recent: recent })));
+    markSeen(items);
+    return items.map(function (it) { it.retry = false; return it; });
+  }
+  // Mastery check: Applied questions this lesson hasn't shown, preferring ones not seen recently.
+  function checkItems(id, used) {
+    var items = drawFamilies(id, BANK.select(id, { levels: [2], n: CHECK_SIZE, exclude: used, recent: recentFor(id) }));
+    markSeen(items);
+    return items;
+  }
+  function usedFams(L) { return L.queue.concat(L.checks || []).map(function (it) { return it.fam; }); }
+  // After a miss: the same idea asked another way, else another question at the same level.
+  function retryItem(item, used) {
+    var sib = BANK.sibling(item), kind = "sibling";
+    if (!sib) {
+      kind = "fresh";
+      var other = BANK.select(item.skill, { levels: [item.lv], n: 1, exclude: used, recent: recentFor(item.skill) });
+      sib = other.length ? BANK.draw(item.skill, other[0])[0] : { q: item.q, order: shuffle(range(item.q.o.length)), skill: item.skill, fam: item.fam, lv: item.lv };
+    }
+    sib.retry = kind;
+    return sib;
+  }
+
   // ---------- questions ----------
   function questionHTML(item, picked, action, xpFloat) {
-    var q = item.q;
-    var html = '<p class="q" id="qtext">' + esc(q.q) + "</p>";
+    var q = item.q, html = "";
+    if (item.setup) {
+      html += '<div class="scenario"><p class="label">' + art("briefcase", 20) + "Desk scenario · part " + item.part + " of " + item.parts + "</p><p>" + esc(item.setup) + "</p></div>";
+    }
+    if (q.kind === "tf") html += '<p class="qtag">True or false?</p>';
+    html += '<p class="q" id="qtext">' + esc(q.q) + "</p>";
     html += '<div class="opts" role="group" aria-labelledby="qtext">';
     item.order.forEach(function (oi, k) {
       var o = q.o[oi], cls = "opt", tag = "";
@@ -512,8 +563,10 @@
     var po = q.o[picked], ok = !!po.ok, right = correctOption(q);
     var rightWhy = right.why.replace(/^Right\.?\s*/, "");
     var inner = '<p class="dock-title">' + icon(ok ? "check" : "cross", 22) + (ok ? pickOne(PRAISE) : "Not quite") + "</p>" +
-      "<p>" + esc(ok ? po.why.replace(/^Right\.?\s*/, "") || "That's the one." : po.why) + "</p>" +
-      (!ok ? "<p><b>Answer:</b> " + esc(right.t) + (rightWhy ? ". " + esc(rightWhy) : "") + "</p>" : "");
+      (q.kind === "tf"
+        ? "<p>" + (ok ? "" : "<b>It's " + right.t.toLowerCase() + ".</b> ") + esc(q.why) + "</p>"
+        : "<p>" + esc(ok ? po.why.replace(/^Right\.?\s*/, "") || "That's the one." : po.why) + "</p>" +
+          (!ok ? "<p><b>Answer:</b> " + esc(right.t) + (rightWhy ? ". " + esc(rightWhy) : "") + "</p>" : ""));
     return '<div class="dock ' + (ok ? "good" : "bad") + '" role="status">' + inner +
       '<button type="button" class="btn btn-primary" data-action="' + nextAction + '" id="continue">' + nextLabel + "</button></div>";
   }
@@ -526,7 +579,7 @@
     var sk = skillById(id);
     lesson = {
       sk: sk, phase: "hook", hookPick: null, card: 0,
-      queue: sk.practice.map(function (q) { return { q: q, order: shuffle(range(q.o.length)), retry: false }; }),
+      queue: practiceItems(id),
       qi: 0, picked: null, xpFloat: null, explainText: "", explainError: null, explainTries: 0, explainResult: null, explainDone: null,
       checks: [], ci: 0, correct: 0, firstTime: !state.skills[id].mastered, unlocked: [],
       xpEarned: 0, answered: 0, right: 0, combo: 0, bestCombo: 0, chest: null, recards: false
@@ -586,7 +639,7 @@
         (c.source ? '<p class="source">Source: ' + esc(c.source) + "</p>" : "") + plainDock("next", "Continue");
     } else if (L.phase === "practice") {
       var item = L.queue[L.qi];
-      html += '<p class="eyebrow">' + (item.retry ? "Second try" : "Practice") + "</p>";
+      html += '<p class="eyebrow">' + (item.retry === "sibling" ? "Second try · same idea, asked a new way" : item.retry ? "Second try · a fresh question" : "Practice · " + BANK.levelName(item.lv || 1)) + "</p>";
       html += questionHTML(item, L.picked, "answer", L.xpFloat);
       if (L.picked !== null) html += feedbackDock(item.q, L.picked, "next", "Continue");
     } else if (L.phase === "explain") {
@@ -640,7 +693,7 @@
         " right to master <b>" + esc(sk.title) + "</b>. Mastering it unlocks what's next" + (L.firstTime ? " and earns +" + XP.mastery + " XP." : ".") + "</p></div>" +
         plainDock("startcheck", "Start the check");
     } else if (L.phase === "check") {
-      html += '<p class="eyebrow">Mastery check · ' + (L.ci + 1) + " of " + CHECK_SIZE + "</p>";
+      html += '<p class="eyebrow">Mastery check · ' + (L.ci + 1) + " of " + CHECK_SIZE + " · " + BANK.levelName(L.checks[L.ci].lv || 2) + "</p>";
       html += questionHTML(L.checks[L.ci], L.picked, "check", null);
       if (L.picked !== null) html += feedbackDock(L.checks[L.ci].q, L.picked, "next", L.ci + 1 < CHECK_SIZE ? "Next question" : "See result");
     } else if (L.phase === "passed") {
@@ -715,7 +768,7 @@
     if (xpNow) { L.xpFloat = "+" + XP.practice + " XP"; give(XP.practice, null); }
     var comboHit = scoreAnswer(ok);
     if (xpNow && !comboHit) Sound.later("xp", 230); // the coin follows the "correct" chime
-    if (!ok && !item.retry) L.queue.push({ q: item.q, order: shuffle(range(item.q.o.length)), retry: true });
+    if (!ok && !item.retry) L.queue.push(retryItem(item, usedFams(L))); // the same idea comes back, asked another way
     renderLesson("#continue");
   }
 
@@ -762,7 +815,7 @@
 
   function startChecks() {
     var L = lesson;
-    L.checks = shuffle(L.sk.mastery).slice(0, CHECK_SIZE).map(function (q) { return { q: q, order: shuffle(range(q.o.length)) }; });
+    L.checks = checkItems(L.sk.id, usedFams(L)); // fresh Applied questions on every attempt
     L.ci = 0; L.correct = 0; L.picked = null; L.phase = "check";
     renderLesson();
   }
@@ -850,9 +903,14 @@
     review = {
       extra: extra, i: 0, picked: null, correct: 0, done: false, combo: 0,
       items: pool.map(function (sk) {
-        var all = sk.practice.concat(sk.mastery);
-        var q = all[Math.floor(Math.random() * all.length)];
-        return { sk: sk, q: q, order: shuffle(range(q.o.length)) };
+        // Spaced reviews climb: Applied at first, Desk-level once a review has been passed; a miss resets the stage,
+        // so the next review steps back down to Applied. Extra practice mixes both.
+        var st = state.skills[sk.id], levels = extra ? [2, 3] : st.stage >= 1 ? [3] : [2];
+        var fam = BANK.select(sk.id, { levels: levels, n: 1, recent: recentFor(sk.id) })[0];
+        var it = BANK.draw(sk.id, fam)[0];
+        markSeen([it]);
+        it.sk = sk;
+        return it;
       })
     };
     renderReview();

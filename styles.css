@@ -235,6 +235,11 @@ main.sheet > .dock { order: 2; margin-top: auto; }
 .xpfloat { position: absolute; right: 12px; top: -12px; background: var(--gold); color: var(--gold-on); font-weight: 800; font-size: 0.8rem; padding: 2px 9px; border-radius: 99px; animation: floatup 1.1s ease-out forwards; pointer-events: none; }
 
 .callout { background: var(--surface-2); border-radius: var(--r-md); padding: 12px 14px; margin: 12px 0; }
+/* Question bank (D44): the desk-scenario setup above its questions, and the True or false tag */
+.scenario { background: linear-gradient(135deg, rgba(15, 148, 136, 0.18), rgba(15, 148, 136, 0.06)), var(--surface); border: 1px solid rgba(45, 212, 191, 0.35); border-radius: var(--r-md); padding: 12px 14px; margin: 4px 0 14px; }
+.scenario .label { color: #5eead4; display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+.scenario p:last-child { margin: 0; color: var(--ink-2); line-height: 1.55; }
+.qtag { display: inline-block; align-self: flex-start; margin: 0 0 6px; padding: 3px 10px; border-radius: 99px; background: var(--primary-tint); color: var(--accent-text); font-size: 0.75rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; }
 .callout .label { margin-bottom: 4px; }
 .source { font-size: 0.82rem; color: var(--ink-3); }
 .textbox { width: 100%; font: inherit; font-size: 1.05rem; padding: 12px 14px; border-radius: var(--r-md); border: 2px solid var(--line-strong); margin-bottom: 12px; resize: vertical; background: var(--surface); color: var(--ink); }
