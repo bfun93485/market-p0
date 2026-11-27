@@ -224,5 +224,115 @@ window.P0_RUBRICS = {
       { say: "They don't earn from dividends, government commissions or exchange fees, and they do face risk.",
         patterns: [/\bdividends?\b/i, /\bcommissions? from the government\b/i, /\bno risk\b/i, /\bfee to the exchange\b/i] }
     ]
+  },
+
+  // ---- Added 2026-11-27 with lessons 1.2, 1.3, 1.5 and 1.6 (D49). Built from the tuning answers only. ----
+  "1.2": {
+    min: 2, need: [[2], [0, 1]],
+    concepts: [
+      { label: "Best bid = the highest bid on any exchange", hint: "Of all the exchanges' bids, which one is the best for a seller?",
+        any: [/\bhighest\b[\s\S]{0,25}\b(bid|bids|buy(ing)? price|buyers?|price (a |any )?buyers?)\b/i, /\bbest (bid|buy(ing)? price)\b/i, /\btop bid\b/i,
+          /\bbid\b[\s\S]{0,40}\b(highest|best|top)\b/i] },
+      { label: "Best offer = the lowest offer on any exchange", hint: "Of all the exchanges' offers, which one is the best for a buyer?",
+        any: [/\blowest\b[\s\S]{0,25}\b(offer|offers|ask|asks|sell(ing)? price|sellers?|price)\b/i, /\bbest (offer|ask|sell(ing)? price)\b/i,
+          /\b(cheapest|lowest) (offer|ask|price|listing)\b/i, /\b(offer|ask)\b[\s\S]{0,40}\b(lowest|best|cheapest)\b/i,
+          /\b(don'?t|do not|never) (pay|overpay)\b[\s\S]{0,25}\b(more|worse)\b/i] },
+      { label: "Across all exchanges: you should get the best price anywhere", hint: "Where do those best prices come from, and what does that mean when you buy?",
+        any: [/\b(all|every|across|multiple|many|different|several|any|other|three)\b[\s\S]{0,25}\b(exchanges?|markets?|venues?|sites?)\b/i, /\bnationa(l|lly)\b/i,
+          /\b(anywhere|wherever)\b/i, /\b(combin|consolidat)\w*/i, /\btrade[\s-]?throughs?\b/i, /\bworse (price|one)\b/i,
+          /\b(broker|rules?|law)\b[\s\S]{0,40}\b(best|protect)\w*/i] }
+    ],
+    wrong: [
+      { say: "No one sets the NBBO: it's simply the best bid and offer currently shown across the exchanges.",
+        patterns: [/\b(government|sec|regulators?)\b\s+(?:[\w']+\s+){0,2}(sets?|decides?|picks?|fixes|chooses)\b/i, /\bset by the (government|sec|regulators?|exchange)\b/i] },
+      { say: "You don't just get one exchange's price: the exchanges are linked, and you should get the best price on any of them.",
+        patterns: [/\b(whatever|whichever)\b[\s\S]{0,30}\b(app'?s?|broker'?s?|one)\b[\s\S]{0,10}\b(exchange|has)\b/i, /\beach exchange has its own price\b/i,
+          /\bonly (on )?(one|a single) exchange\b/i, /\b(new york stock exchange|nyse|nasdaq)\b[\s\S]{0,10}\bonly\b/i] },
+      { say: "It's the other way round: the best bid is the highest bid, and the best offer is the lowest offer.",
+        patterns: [/\bbest bid\b[\s\S]{0,15}\b(is|=)\b[\s\S]{0,10}\blowest\b/i, /\bbest (offer|ask)\b[\s\S]{0,15}\b(is|=)\b[\s\S]{0,10}\bhighest\b/i] },
+      { say: "The NBBO is the best bid and offer right now, not an average or a once-a-day price.",
+        patterns: [/\baverage\b/i, /\b(opening|closing) price\b/i, /\bone price everywhere\b/i] }
+    ]
+  },
+
+  "1.3": {
+    min: 2, need: [[2], [0, 1]],
+    concepts: [
+      { label: "Market order: fills right away", hint: "What does a market order do the moment you send it?",
+        any: [/\bmarket\b[\s\S]{0,60}\b(immediately|right away|instantly|instant|straight away|right now|now|fast|quick|quickly|asap|at once)\b/i,
+          /\b(immediately|right away|instantly|straight away|right now)\b[\s\S]{0,50}\bmarket\b/i,
+          /\b(fills?|executes?|executed|filled|trades?|buys?|sells?)\b[\s\S]{0,15}\b(immediately|right away|instantly|straight away|right now|now)\b/i] },
+      { label: "Market order: the price isn't guaranteed", hint: "Does a market order promise you the price you saw?",
+        any: [/\b(price|it)\b[\s\S]{0,30}\b(not|isn'?t|no|never|n'?t)\b[\s\S]{0,12}\b(guarantee[ds]?|fixed|certain|known|exact)\b/i, /\b(no|not a|without( a)?) (price )?guarantee/i,
+          /\bslip(page|s|ped)?\b/i, /\b(any|whatever)\b[\s\S]{0,6}\b(price|it costs)\b/i, /\b(could|can|might|may)\b[\s\S]{0,6}\b(differ|change|move|be different|be worse|be higher|vary)\b/i,
+          /\b(best|current) (available )?price\b/i, /\bdon'?t know (the )?(exact )?price\b/i] },
+      { label: "Limit order: sets your price, may not fill", hint: "What does a limit order let you control, and what's the catch?",
+        any: [/\blimit\b[\s\S]{0,80}\b(set|sets|choose|chooses|pick|picks|name|names|specif\w*|max(imum)?|min(imum)?|most|least|your price|certain price|specific price|price you want|or better|cap)\b/i,
+          /\blimit\b[\s\S]{0,100}\b(might|may|could|won'?t|wouldn'?t|not|never|maybe)\b[\s\S]{0,15}\b(fill|filled|execute|executed|happen|go through|get filled|trade|go unfilled)\b/i,
+          /\bor better\b/i, /\bnot more than\b/i, /\bunfilled\b/i] }
+    ],
+    wrong: [
+      { say: "A market order isn't promised the price you saw: it takes the best price available when it arrives, which can differ.",
+        patterns: [/\bmarket order\b(?:(?!not\b|n't|\bno\b|never)[\s\S]){0,40}\bexact(ly)?\b/i, /\bguaranteed\b[\s\S]{0,20}\b(exact|the price (you see|shown|on the screen))\b/i] },
+      { say: "It's the other way round: a market order almost always fills, while a limit order might not.",
+        patterns: [/\blimit orders?\b(?:(?!not\b|n't|\bno\b|never)[\s\S]){0,20}\b(always|guaranteed to|will always)\b[\s\S]{0,10}\b(fill|fills|execute|go through)/i,
+          /\bmarket orders?\b[\s\S]{0,25}\b(might|may) not (fill|execute|go through)/i] },
+      { say: "A limit order limits your price, not how many shares you buy, and it isn't an automatic loss limit.",
+        patterns: [/\blimits? (on|to)?\s*(the number of|how many) shares\b/i, /\blimit(s)?\b[\s\S]{0,30}\bhow many shares\b/i, /\blimits? (your )?loss(es)?\b/i] },
+      { say: "Both are ordinary orders anyone can use for stocks; the difference is speed versus control of the price.",
+        patterns: [/\blimit orders? (are|is) for bonds\b/i, /\bsame thing\b/i, /\bonly (allowed )?for (big )?banks\b/i] }
+    ]
+  },
+
+  "1.5": {
+    min: 2, need: [[0], [1]],
+    concepts: [
+      { label: "Agent: finds the other side for a fee", hint: "What does an agent do for the client, and how is it paid?",
+        any: [/\bagen(t|cy)\b[\s\S]{0,100}\b(find|finds|found|finding|match|matches|matching|connect|connects|arrang\w*|other side|counterparty|someone else|another (buyer|seller|party|investor)|a (buyer|seller) for)\b/i,
+          /\bagen(t|cy)\b[\s\S]{0,100}\b(fee|commission|charges?)\b/i, /\b(fee|commission)\b[\s\S]{0,60}\bagen(t|cy)\b/i, /\bon (the )?(client'?s|someone'?s|their|your) behalf\b/i] },
+      { label: "Principal: trades from its own inventory", hint: "Where do the shares come from when a firm acts as principal?",
+        any: [/\bprincipal\b[\s\S]{0,100}\b(own|inventory|book|account|holdings?|capital|itself|themselves|yourself)\b/i, /\b(own|its|their) (inventory|book|account|stock|shares|closet|holdings)\b/i,
+          /\bprincipal\b[\s\S]{0,60}\b(is|as|being) the (other side|counterparty)\b/i, /\bprincipal\b[\s\S]{0,80}\b(markup|mark-up|spread)\b/i,
+          /\bprincipal\b[\s\S]{0,60}\b(buys?|sells?|deals?|trades?)\b[\s\S]{0,30}\b(itself|yourself|own|directly|with you)\b/i] },
+      { label: "The principal takes price risk; the agent doesn't", hint: "Which one could lose money if the price moves?",
+        any: [/\b(principal|dealer|firm|it|they)\b[\s\S]{0,80}\b(take|takes|taking|took|carr(y|ies|ying)|hold|holds|holding|bear|bears)\b[\s\S]{0,25}\brisk/i,
+          /\b(risk|lose|loss)\b[\s\S]{0,40}\b(price|prices) (move|moves|fall|falls|drop|drops|changes?)\b/i, /\b(could|can|might|may) lose\b/i,
+          /\b(no|without|never|doesn'?t (take|carry|have))\b[\s\S]{0,10}\b(price )?risk\b/i, /\b(holds?|holding) the (position|shares|risk)\b/i,
+          /\bnever owns?\b/i, /\bwithout owning\b/i] }
+    ],
+    wrong: [
+      { say: "Acting as principal for clients isn't betting on direction: it's serving clients from inventory, as a market maker does.",
+        patterns: [/\bprincipal\b(?:(?!not\b|n't|\bno\b|never)[\s\S]){0,50}\b(bet|bets|betting|gambl\w*|speculat\w*)\b/i] },
+      { say: "It's the other way round: the principal owns the shares; the agent never does.",
+        patterns: [/\bagen(t|cy)\b(?:(?!not\b|n't|\bno\b|never)[\s\S]){0,15}\bowns?\b/i, /\bagen(t|cy)\b[\s\S]{0,30}\b(invest\w*|using) (your|its|their) own money\b/i] },
+      { say: "Agent and principal describe the firm's role in a trade, not job titles or where the trade happens.",
+        patterns: [/\bprincipal (is|means) the (person|boss|one) in charge\b/i, /\bboss\b/i, /\bgoes through the (stock )?exchange\b/i] }
+    ]
+  },
+
+  "1.6": {
+    min: 2, need: [[0], [1, 2]],
+    concepts: [
+      { label: "Liquidity: trading easily without moving the price", hint: "What does it mean for a stock to be liquid?",
+        any: [/\bliquid(ity)?\b[\s\S]{0,80}\b(easy|easily|ease|quick|quickly|fast|without (moving|changing|affecting|pushing|much)|little (impact|effect))\b/i,
+          /\bwithout (much )?(moving|changing|affecting|pushing|hurting|impacting|market impact)\b/i, /\b(how easily|how easy|how quickly|how fast|ability to (buy|sell|trade))\b/i,
+          /\b(lots of|many|plenty of|loads of)\b[\s\S]{0,15}\b(buyers|sellers|traders)\b/i, /\b(tight spreads?|depth)\b/i] },
+      { label: "Only so many shares at the best price", hint: "How many shares are waiting at the best price?",
+        any: [/\b(only|limited|few|so many|certain number|not enough|finite)\b[\s\S]{0,40}\b(shares?|buyers|sellers|offers|bids|available)\b/i,
+          /\b(use[sd]?|using) up\b|\beats?( through| up)?\b|\brun(s)? out\b|\bexhaust\w*|\bwipes? out\b/i, /\bat (each|the best|the current) price\b/i,
+          /\b(order book|the book|depth)\b/i] },
+      { label: "A big order trades at worse prices and moves the price", hint: "What happens to the price a big order pays as it keeps buying?",
+        any: [/\b(big|large|huge|massive|giant)\b[\s\S]{0,40}\b(order|trade|sale|purchase|amount|buy|sell)\w*[\s\S]{0,80}\b(move|moves|push|pushes|drive|drives|raise|raises|lower|lowers|worse|higher|change|changes|cut)\b/i,
+          /\b(worse|higher|lower) (and (worse|higher|lower) )?prices?\b/i, /\b(market impact|slippage)\b/i, /\bwalks?( up| down)? (the book|to)\b/i,
+          /\b(moves?|pushes|pushing|changes?) the (stock'?s )?price\b/i, /\bcut (the|your) price\b/i] }
+    ],
+    wrong: [
+      { say: "Here liquidity means how easily a stock trades, not how much cash a company holds.",
+        patterns: [/\b(company|companies|firm)('s)?\b[\s\S]{0,30}\b(cash|in the bank|assets into cash)\b/i, /\bhow much (cash|money)\b/i] },
+      { say: "You can't sell any amount at the quoted price: only so many shares are bid or offered there, so big orders move the price.",
+        patterns: [/\b(any amount|as many (shares )?as you want|unlimited)\b[\s\S]{0,40}\b(price|quoted|screen)\b/i, /\bbig orders? (don'?t|do not|doesn'?t) (matter|move)\b/i] },
+      { say: "Big orders move prices because they use up the shares offered at the best price, not because of fees, rules or the company.",
+        patterns: [/\b(exchange|broker)\b[\s\S]{0,20}\bcharges? more\b/i, /\billegal\b/i, /\bcompany sees\b/i] }
+    ]
   }
 };

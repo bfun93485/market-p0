@@ -1,4 +1,4 @@
-/* P0 lesson content: branch 0 (market basics) plus skills 1.1 and 1.4.
+/* P0 lesson content: branch 0 (market basics) plus skills 1.1 to 1.6 (1.2, 1.3, 1.5 and 1.6 added 2026-11-27, D49).
    Skill IDs and order follow breakdown/skill_map.md. Starting point: the learner knows only that a stock is a
    share of a company you can buy, whose value can go up or down.
    Question format: { q, o: [{ t: option text, ok: true for the correct option, why: feedback for that option }] }
@@ -486,6 +486,128 @@ window.P0_CONTENT = {
     },
 
     {
+      id: "1.2",
+      title: "The best price across exchanges",
+      needs: ["1.1"],
+      hook: {
+        q: "The same stock is offered at $20.15 on one exchange, $20.13 on another and $20.14 on a third. You buy right now through your app. What price should you expect?",
+        o: ["Whatever the exchange your app happens to use is asking", "About $20.13, the best offer across all of them", "The average, about $20.14"],
+        ans: 1,
+        reveal: "U.S. rules link the exchanges, so you should get the best displayed price anywhere: $20.13 here. That best price is part of the National Best Bid and Offer."
+      },
+      cards: [
+        {
+          title: "One national best price",
+          body: "The same stock trades on many exchanges at once. The National Best Bid and Offer (NBBO) is the highest bid and the lowest offer across all of them, combined into one quote that updates all day. If one exchange bids $20.10 and another $20.09, the best bid is $20.10. If one offers $20.13 and another $20.14, the best offer is $20.13.",
+          scenario: "The same concert seat listed on three resale sites: the best deal is the lowest price on any of them, not just the site you happen to open."
+        },
+        {
+          title: "Rules protect the best price",
+          body: "U.S. rules generally stop a trade from happening at a worse price than the best displayed quote on another exchange; that's called a trade-through. Your broker also has a duty of best execution: to seek the best terms reasonably available for your order. The NBBO shows only the best prices and the shares offered there, so a big order may need more shares than the best price offers.",
+          source: "SEC Regulation NMS, Rule 611 (Order Protection Rule); FINRA Rule 5310 (Best Execution)"
+        }
+      ],
+      practice: [
+        { q: "Exchange A quotes 30.05 / 30.09. Exchange B quotes 30.06 / 30.10. What is the national best bid?", o: [
+          { t: "30.06", ok: true, why: "Right. The best bid is the highest bid on any exchange." },
+          { t: "30.05", why: "That's the lower of the two bids. Sellers want the highest." },
+          { t: "30.09", why: "That's an offer (ask), not a bid." } ] },
+        { q: "Exchange A quotes 30.05 / 30.09. Exchange B quotes 30.06 / 30.10. What is the national best offer?", o: [
+          { t: "30.09", ok: true, why: "Right. The best offer is the lowest ask on any exchange." },
+          { t: "30.10", why: "That's the higher of the two offers. Buyers want the lowest." },
+          { t: "30.06", why: "That's a bid, not an offer." } ] },
+        { q: "What does the NBBO combine?", o: [
+          { t: "The best bid and best offer across all U.S. exchanges", ok: true, why: "Right. One national best quote." },
+          { t: "Every price traded so far today", why: "That's the day's trade history, not the best current quote." },
+          { t: "The prices on the biggest exchange only", why: "It combines all U.S. exchanges, not just one." } ] }
+      ],
+      explain: {
+        prompt: "Explain what the National Best Bid and Offer is and why it matters when you buy a stock.",
+        model: "The NBBO is the highest bid and the lowest offer across all U.S. exchanges combined. When you buy, rules and your broker's duty of best execution mean you should get the best offer available anywhere, not just one exchange's price.",
+        checklist: ["Best bid = the highest bid on any exchange", "Best offer = the lowest offer on any exchange", "You should get the best price available anywhere"]
+      },
+      mastery: [
+        { q: "Three exchanges bid 15.20, 15.22 and 15.21. What is the national best bid?", o: [
+          { t: "15.22", ok: true, why: "Right. The highest bid anywhere." },
+          { t: "15.20", why: "That's the lowest bid." },
+          { t: "15.21", why: "That's in the middle; the best bid is the highest." } ] },
+        { q: "Three exchanges offer 15.25, 15.24 and 15.27. What is the national best offer?", o: [
+          { t: "15.24", ok: true, why: "Right. The lowest offer anywhere." },
+          { t: "15.27", why: "That's the highest offer." },
+          { t: "15.25", why: "There's a lower offer at 15.24." } ] },
+        { q: "What is a trade-through?", o: [
+          { t: "A trade at a worse price than the best displayed quote on another exchange", ok: true, why: "Right. U.S. rules generally prevent this." },
+          { t: "A trade that passes through two brokers", why: "It's about price, not how many firms handle it." },
+          { t: "A trade made after the market closes", why: "That's after-hours trading." } ] },
+        { q: "The NBBO is 40.00 / 40.02 with only 100 shares offered at 40.02. You buy 1,000 shares immediately. What should you expect?", o: [
+          { t: "Some shares at 40.02 and the rest at higher prices", ok: true, why: "Right. The best price only has 100 shares; the rest come from higher offers." },
+          { t: "All 1,000 at 40.02, guaranteed", why: "Only 100 shares are offered at 40.02." },
+          { t: "All 1,000 at 40.00", why: "40.00 is the bid, the selling side." } ] }
+      ]
+    },
+
+    {
+      id: "1.3",
+      title: "Market orders and limit orders",
+      needs: ["1.1"],
+      hook: {
+        q: "The screen shows $50.00 and you tap \"buy\" with a market order. A second later it fills. At what price?",
+        o: ["Exactly $50.00, the price on the screen", "At the best price available when the order arrives, which may differ a little", "At the day's average price"],
+        ans: 1,
+        reveal: "A market order says \"fill me now at the best price available.\" It's almost certain to fill, but the price can differ from what you saw, especially in fast or thinly traded markets."
+      },
+      cards: [
+        {
+          title: "Market order: now, at the best available price",
+          body: "A market order buys or sells immediately at the best price available. It's very likely to fill, but the price isn't guaranteed: the quote can move before your order arrives, and a big order can use up the best price and fill at worse ones. The gap between the price you expected and the price you got is called slippage.",
+          scenario: "Telling a friend at a concert: \"Get me a T-shirt, whatever it costs.\""
+        },
+        {
+          title: "Limit order: your price or better",
+          body: "A limit order sets the most you'll pay to buy, or the least you'll accept to sell. It fills only at that price or better, so it protects your price, but it may fill only partly or not at all if the market never reaches it. A buy limit below the ask waits in line with the other bids.",
+          scenario: "\"Get me a T-shirt, but not for more than $30.\""
+        }
+      ],
+      practice: [
+        { q: "Which order is most likely to fill right away?", o: [
+          { t: "A market order", ok: true, why: "Right. It takes the best price available now." },
+          { t: "A buy limit order well below the ask", why: "That waits until a seller comes down to its price." },
+          { t: "Both are equally likely", why: "A limit below the market may not fill at all." } ] },
+        { q: "The ask is $25.40. You place a buy limit order at $25.00. What happens?", o: [
+          { t: "It waits until a seller will sell at $25.00 or less", ok: true, why: "Right. Your limit is below the ask, so it rests with the bids." },
+          { t: "It fills now at $25.40", why: "That's above your limit; a limit order never pays more than its price." },
+          { t: "It fills now at $25.00", why: "Nobody is selling at $25.00 yet." } ] },
+        { q: "What does a limit order guarantee?", o: [
+          { t: "Your price or better, if it fills", ok: true, why: "Right. It protects the price, not the fill." },
+          { t: "That it will fill", why: "It may never fill if the market doesn't reach your price." },
+          { t: "The fastest possible fill", why: "Market orders are the fast ones." } ] }
+      ],
+      explain: {
+        prompt: "Explain the difference between a market order and a limit order.",
+        model: "A market order fills right away at the best price available, but the price isn't guaranteed. A limit order sets the worst price you'll accept, so it protects your price, but it might fill only partly or not at all.",
+        checklist: ["Market: fills right away", "Market: price not guaranteed", "Limit: sets your price, may not fill"]
+      },
+      mastery: [
+        { q: "You need to sell immediately, whatever happens. Which order fits?", o: [
+          { t: "A market order", ok: true, why: "Right. It fills now at the best available bid." },
+          { t: "A sell limit far above the bid", why: "That waits for a buyer to come up to your price." },
+          { t: "A buy limit order", why: "That's an order to buy, not sell." } ] },
+        { q: "A sell limit order at $40 can fill at…", o: [
+          { t: "$40 or higher", ok: true, why: "Right. A sell limit is the least you'll accept." },
+          { t: "$40 or lower", why: "That would sell below your limit." },
+          { t: "Only exactly $40, never better", why: "Limits fill at your price or better." } ] },
+        { q: "What is slippage?", o: [
+          { t: "The gap between the price you expected and the price you got", ok: true, why: "Right. Market orders can slip in fast or thin markets." },
+          { t: "A fee your broker charges", why: "Slippage is a price difference, not a fee." },
+          { t: "The time an order waits in line", why: "Waiting isn't slippage; price difference is." } ] },
+        { q: "The quote is 10.00 / 10.05 and you place a buy limit at 10.05. What happens?", o: [
+          { t: "It can fill right away, because your limit reaches the ask", ok: true, why: "Right. A limit at or through the ask is marketable." },
+          { t: "It must wait for the price to drop", why: "Your limit already matches the ask." },
+          { t: "It's rejected", why: "It's a normal order." } ] }
+      ]
+    },
+
+    {
       id: "1.4",
       title: "How a market maker earns",
       needs: ["1.1"],
@@ -543,9 +665,132 @@ window.P0_CONTENT = {
           { t: "It bets the bank's money on its favourite stocks", why: "Under the Volcker Rule, U.S. banks generally can't do that." },
           { t: "It sets the official price for the whole market", why: "No single firm sets the market price." } ] }
       ]
+    },
+
+    {
+      id: "1.5",
+      title: "Agency vs principal",
+      needs: ["1.4"],
+      hook: {
+        q: "A sneaker reseller can find you a pair from another seller for a $10 fee, or sell you a pair from their own closet. Which one is taking a risk on the sneakers?",
+        o: ["Finding you a pair for a fee", "Selling you a pair from their own closet", "Neither"],
+        ans: 1,
+        reveal: "Selling from their own closet means they bought the sneakers first and carried the risk that prices fall. That's acting as principal. Finding you a pair for a fee is acting as agent."
+      },
+      cards: [
+        {
+          title: "Agency: finding the other side",
+          body: "Acting as agent, a broker finds someone to take the other side of your trade and charges a fee or commission. The broker never owns the shares, so it takes no price risk. Its job is to get you a good price.",
+          scenario: "A sneaker reseller finds you a pair from another seller and charges $10 for the service."
+        },
+        {
+          title: "Principal: trading from your own book",
+          body: "Acting as principal, a dealer trades with you from its own inventory, as a market maker does. It earns the spread or a markup and takes the risk that the price moves while it holds the position. Banks' desks do both: they work clients' orders as agent, and they make markets or take on large blocks as principal to serve clients. Trade confirmations must say which capacity the firm acted in.",
+          scenario: "The reseller sells you a pair from their own closet: they bought it earlier and carried the risk that prices fell.",
+          source: "SEC Rule 10b-10 (trade confirmations disclose whether the firm acted as agent or principal)"
+        }
+      ],
+      practice: [
+        { q: "A broker finds a seller for the shares you want and charges a commission, never owning them. That's…", o: [
+          { t: "Acting as agent", ok: true, why: "Right. It found the other side for a fee." },
+          { t: "Acting as principal", why: "A principal trades from its own inventory." },
+          { t: "Proprietary betting", why: "No one is betting here; the broker is matching you with a seller." } ] },
+        { q: "A dealer sells you shares from its own inventory. That's…", o: [
+          { t: "Acting as principal", ok: true, why: "Right. It's the other side of your trade." },
+          { t: "Acting as agent", why: "An agent finds someone else to trade with you." },
+          { t: "An IPO", why: "An IPO is a company selling new shares." } ] },
+        { q: "In an agency trade, who takes the price risk on the shares?", o: [
+          { t: "Not the broker: it never owns them", ok: true, why: "Right. The client and the other side carry the risk." },
+          { t: "The broker", why: "An agent doesn't own the shares, so it isn't exposed to their price." },
+          { t: "The stock exchange", why: "Exchanges don't own the shares being traded." } ] }
+      ],
+      explain: {
+        prompt: "Explain the difference between acting as agent and acting as principal.",
+        model: "An agent finds the other side of a client's trade and charges a commission, never owning the shares, so it takes no price risk. A principal trades with the client from its own inventory, earning a spread or markup and taking the risk that the price moves while it holds the position.",
+        checklist: ["Agent: finds the other side for a fee", "Principal: trades from its own inventory", "The principal takes price risk; the agent doesn't"]
+      },
+      mastery: [
+        { q: "Which earns money mainly from a commission?", o: [
+          { t: "An agent", ok: true, why: "Right. The commission is its fee for finding the other side." },
+          { t: "A principal", why: "A principal earns a spread or markup, and takes risk." },
+          { t: "A shareholder", why: "Shareholders earn from price changes and dividends." } ] },
+        { q: "A bank buys a fund's 1 million shares itself, then sells them over the next few days. How did it act?", o: [
+          { t: "As principal, taking the risk that the price moves", ok: true, why: "Right. It owned the shares in between." },
+          { t: "As agent", why: "It bought the shares itself rather than finding another buyer." },
+          { t: "As neither", why: "Buying for its own book is acting as principal." } ] },
+        { q: "Does serving clients as principal mean the bank is betting on the market's direction?", o: [
+          { t: "No: trading from inventory to serve clients is market making, not a directional bet", ok: true, why: "Right. The risk is a side effect of serving clients, and banks manage it down." },
+          { t: "Yes, always", why: "Principal trading for clients is different from betting on direction." },
+          { t: "Yes, so U.S. banks are banned from it", why: "U.S. rules allow market making for clients; they limit trading just to bet the bank's own money." } ] },
+        { q: "Why might a client prefer that a broker act as agent?", o: [
+          { t: "The broker isn't on the other side of the trade, so its job is just to find the best price", ok: true, why: "Right. There's no inventory of its own to sell you." },
+          { t: "Agency trades are always cheaper", why: "Not always; a principal's quote can be competitive too." },
+          { t: "Agents guarantee a better price", why: "Agents seek the best price but can't guarantee it." } ] }
+      ]
+    },
+
+    {
+      id: "1.6",
+      title: "Liquidity and big orders",
+      needs: ["1.4"],
+      hook: {
+        q: "The night before a show, you could easily sell 1 concert ticket at $120. What happens if you try to sell 500 tickets that night?",
+        o: ["You sell all 500 at $120", "You'd have to drop the price to find enough buyers", "The price rises because you have more"],
+        ans: 1,
+        reveal: "Only so many buyers want tickets at $120. To sell 500 you'd keep lowering the price to reach more buyers. A big order does the same thing to a stock's price."
+      },
+      cards: [
+        {
+          title: "Liquidity: trading without moving the price",
+          body: "A liquid market lets you buy or sell quickly without moving the price much. Signs of liquidity: tight spreads, lots of shares offered at each price (called depth), and heavy daily trading. Big companies' shares are usually very liquid; small companies' shares, houses and collectibles are much less so.",
+          scenario: "Selling one concert ticket at the going price is easy: the market can absorb it."
+        },
+        {
+          title: "Big orders walk the book",
+          body: "Only so many shares are offered at the best price. A large buy order uses them up and moves on to higher offers, so the price you pay climbs; a large sell order pushes down through the bids. That's market impact. Traders reduce it by splitting big orders into smaller pieces over time or by finding a large buyer or seller off-exchange. Liquidity can also dry up suddenly in a panic, when everyone wants to sell at once.",
+          scenario: "Selling 500 tickets the night before the show: after the first buyers, you have to cut your price to find more."
+        }
+      ],
+      practice: [
+        { q: "Which is usually the most liquid?", o: [
+          { t: "Shares of a huge, heavily traded company", ok: true, why: "Right. Many buyers and sellers, tight spreads, lots of depth." },
+          { t: "A rare painting", why: "Finding a buyer can take months, and the price can swing a lot." },
+          { t: "Shares of a tiny company that trades a few times a day", why: "Few traders means wide spreads and little depth." } ] },
+        { q: "Sellers offer 100 shares at $10.00 and 400 more at $10.05. You buy 300 shares immediately. What happens?", o: [
+          { t: "100 fill at $10.00 and 200 at $10.05", ok: true, why: "Right. The order uses up the best price, then moves to the next." },
+          { t: "All 300 fill at $10.00", why: "Only 100 shares are offered at $10.00." },
+          { t: "Nothing fills", why: "There are enough shares offered; they're just at two prices." } ] },
+        { q: "What is market impact?", o: [
+          { t: "The price moving because of your own order", ok: true, why: "Right. Big orders push the price against themselves." },
+          { t: "News that affects the whole market", why: "That's market news, not your order's impact." },
+          { t: "A fee charged for trading", why: "Impact is a price effect, not a fee." } ] }
+      ],
+      explain: {
+        prompt: "Explain what liquidity is and why a large order can move a stock's price.",
+        model: "Liquidity is how easily you can buy or sell without moving the price. Only so many shares are offered at the best price, so a large order uses them up and has to trade at worse prices, which moves the price.",
+        checklist: ["Liquidity: trading easily without moving the price", "Only so many shares at the best price", "A big order trades at worse prices and moves it"]
+      },
+      mastery: [
+        { q: "Which is a sign of a liquid stock?", o: [
+          { t: "A tight spread with lots of shares at each price", ok: true, why: "Right. Tight and deep means easy to trade." },
+          { t: "A wide spread and very little trading", why: "That's a sign of an illiquid stock." },
+          { t: "A very high share price", why: "Share price says nothing about liquidity." } ] },
+        { q: "Why do big funds split large orders into smaller pieces over time?", o: [
+          { t: "To reduce how much their own trading moves the price", ok: true, why: "Right. Smaller pieces use less of the available depth at once." },
+          { t: "Because exchanges cap orders at 100 shares", why: "There's no such cap; it's about market impact." },
+          { t: "To pay more commission", why: "Nobody wants to pay more commission; it's about impact." } ] },
+        { q: "In a market panic, what often happens to liquidity?", o: [
+          { t: "It dries up: buyers step back and spreads widen", ok: true, why: "Right. Liquidity is often scarcest exactly when people want it most." },
+          { t: "It increases sharply", why: "Panics usually reduce the number of willing buyers." },
+          { t: "It stays exactly the same", why: "Liquidity changes with market conditions." } ] },
+        { q: "Buyers bid for 200 shares at $8.00 and 300 at $7.95. You sell 400 shares immediately. Your average price is about…", o: [
+          { t: "$7.975", ok: true, why: "Right. 200 at $8.00 and 200 at $7.95 average $7.975." },
+          { t: "$8.00", why: "Only 200 shares were bid at $8.00." },
+          { t: "$7.95", why: "The first 200 sold at $8.00." } ] }
+      ]
     }
   ],
 
   // The order the path shows, and the stall game that unlocks after skill 1.4.
-  pathOrder: ["0.1", "0.2", "0.3", "0.4", "0.5", "0.6", "0.7", "1.1", "1.4", "stall"]
+  pathOrder: ["0.1", "0.2", "0.3", "0.4", "0.5", "0.6", "0.7", "1.1", "1.2", "1.3", "1.4", "stall", "1.5", "1.6"]
 };

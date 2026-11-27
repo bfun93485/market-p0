@@ -280,6 +280,11 @@ main.sheet > .dock { order: 2; margin-top: auto; }
 .dg-two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .dg-two > div { background: var(--surface-2); border-radius: var(--r-sm); padding: 10px 12px; }
 .dg-two ul { margin: 4px 0 0; padding-left: 18px; }
+.dg-book { display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 4px; text-align: center; font-weight: 700; }
+.dg-book > span { background: var(--surface-2); border-radius: 8px; padding: 6px 4px; border: 2px solid transparent; }
+.dg-book > .h { background: none; font-size: 0.75rem; color: var(--ink-3); font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; padding: 0 4px; }
+.dg-book > .best { background: var(--primary-tint); border-color: var(--accent-text); color: var(--ink); }
+.dg-book > .tot { background: none; border-top: 2px solid var(--line-strong); border-radius: 0; color: var(--accent-text); font-weight: 800; }
 .dg-sum { display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; font-weight: 800; }
 .dg-sum span { background: var(--surface-2); border-radius: var(--r-sm); padding: 6px 10px; }
 

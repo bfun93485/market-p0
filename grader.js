@@ -24,7 +24,8 @@ window.P0Grader = (function () {
     "primary", "secondary", "resell", "resale", "earnings", "profits", "capitalization", "outstanding", "difference", "agreed",
     "transaction", "transactions", "supply", "demand", "lender", "lenders", "lending", "holding", "adverse", "selection", "informed",
     "pension", "retail", "makers", "sectors", "industry", "industries", "different", "investment", "investments", "basket", "nobody",
-    "constantly", "latest", "stockholders", "shareholders", "bondholders", "guaranteed", "outstanding"];
+    "constantly", "latest", "stockholders", "shareholders", "bondholders", "guaranteed", "outstanding",
+    "liquidity", "liquid", "principal", "commission", "counterparty", "national", "slippage", "immediately", "instantly", "exchanges", "execute", "executed"];
   var VOCAB_SET = {};
   VOCAB.forEach(function (w) { VOCAB_SET[w] = true; });
   // Correctly spelled common words that sit one edit away from a key word and must be left alone.

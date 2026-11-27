@@ -25,14 +25,16 @@
     { name: "Director", xp: 1400, art: "bank" },
     { name: "Desk Head", xp: 2200, art: "crown" }
   ];
-  var SKILL_ART = { "0.1": "label", "0.2": "pizza", "0.3": "rocket", "0.4": "building", "0.5": "scroll", "0.6": "banknote", "0.7": "basket", "1.1": "ticket", "1.4": "apple", "stall": "store" };
+  var SKILL_ART = { "0.1": "label", "0.2": "pizza", "0.3": "rocket", "0.4": "building", "0.5": "scroll", "0.6": "banknote", "0.7": "basket", "1.1": "ticket", "1.2": "crown", "1.3": "memo", "1.4": "apple", "stall": "store",
+    "1.5": "briefcase", "1.6": "barchart" };
   var CARD_ART = {
     "0.1": ["puzzle", "ticket"], "0.2": ["numbers", "pizza"], "0.3": ["rocket", "tshirt"], "0.4": ["building", "people"], "0.5": ["scroll", "lemon"],
-    "0.6": ["banknote", "juicebox"], "0.7": ["scale", "umbrella"], "1.1": ["ticket", "ticket"], "1.4": ["apple", "snowflake"]
+    "0.6": ["banknote", "juicebox"], "0.7": ["scale", "umbrella"], "1.1": ["ticket", "ticket"], "1.2": ["ticket", "shield"], "1.3": ["bolt", "lock"], "1.4": ["apple", "snowflake"],
+    "1.5": ["people", "package"], "1.6": ["people", "chartup"]
   };
   var UNITS = [
     { n: 1, title: "Market basics", sub: "How stocks, prices and markets work", cls: "u1", art: "building", ids: ["0.1", "0.2", "0.3", "0.4", "0.5", "0.6", "0.7"] },
-    { n: 2, title: "The trading desk", sub: "Quotes, spreads and how market makers earn", cls: "u2", art: "store", ids: ["1.1", "1.4", "stall"] }
+    { n: 2, title: "The trading desk", sub: "Quotes, orders and how market makers earn", cls: "u2", art: "store", ids: ["1.1", "1.2", "1.3", "1.4", "stall", "1.5", "1.6"] }
   ];
   var ZIG = [0, 58, 86, 58, 0, -58, -86, -58];
   var PRAISE = ["Nailed it!", "Sharp!", "Spot on!", "Exactly right!", "You've got it!", "Nice read!"];
@@ -62,6 +64,31 @@
         '<div class="dg-gap"><span>spread</span><span>4¢</span></div>' +
         '<div class="dg-side"><span class="label">Ask</span><b>$20.14</b><span class="small">You pay this if you buy</span></div>' +
         "</div></div>";
+    },
+    "1.2:0": function () {
+      function row(x, b, a, bb, ba) { return "<span>" + x + '</span><span class="' + (bb ? "best" : "") + '">$' + b + '</span><span class="' + (ba ? "best" : "") + '">$' + a + "</span>"; }
+      return '<div class="diagram"><p class="label">Three exchanges, one national best price</p><div class="dg-book num">' +
+        '<span class="h">Exchange</span><span class="h">Bid</span><span class="h">Offer</span>' +
+        row("A", "20.10", "20.14", true, false) + row("B", "20.09", "20.13", false, true) + row("C", "20.08", "20.15", false, false) +
+        '<span class="tot">NBBO</span><span class="tot">$20.10</span><span class="tot">$20.13</span>' +
+        '</div><p class="small" style="margin-top:8px">The highest bid and the lowest offer can sit on different exchanges.</p></div>';
+    },
+    "1.3:1": function () {
+      return '<div class="diagram"><p class="label">Two ways to say "buy"</p><div class="dg-two">' +
+        "<div><b>Market order</b><ul><li>Fills now, almost always</li><li>Price not guaranteed</li><li>Can slip in fast or thin markets</li></ul></div>" +
+        "<div><b>Limit order</b><ul><li>Your price or better</li><li>May fill partly, or not at all</li><li>Waits in line if the market isn't there</li></ul></div>" +
+        "</div></div>";
+    },
+    "1.5:1": function () {
+      return '<div class="diagram"><p class="label">Same trade, two roles</p><div class="dg-two">' +
+        "<div><b>Agent</b><ul><li>Finds the other side</li><li>Paid a commission</li><li>Never owns the shares: no price risk</li></ul></div>" +
+        "<div><b>Principal</b><ul><li>Is the other side</li><li>Paid the spread or a markup</li><li>Owns the shares: takes price risk</li></ul></div>" +
+        "</div></div>";
+    },
+    "1.6:1": function () {
+      function row(p, s, f) { return '<div class="dg-row"><span><b>$' + p + '</b><br><span class="small num">' + s + ' offered</span></span><div><div class="dg-bar" style="width:' + Math.max(f / s * 100, 2) + '%"></div><span class="small num">' + (f ? f + " bought" + (f < s ? ", " + (s - f) + " left" : ", all used up") : "not reached") + "</span></div></div>"; }
+      return '<div class="diagram"><p class="label">Buying 300 shares right now</p>' + row("10.00", 100, 100) + row("10.05", 400, 200) + row("10.10", 500, 0) +
+        '<p class="small num">100 at $10.00 + 200 at $10.05 = an average of about $10.03, above the $10.00 on screen.</p></div>';
     },
     "1.4:0": function () {
       return '<div class="diagram"><p class="label">The market maker\'s round trip</p><div class="dg-flow">' +
@@ -157,7 +184,8 @@
     var ids = C.skills.filter(function (sk) { return !state.skills[sk.id].mastered && isAvailable(sk); })
       .map(function (sk) { return sk.id; });
     if (stallUnlocked()) ids.push("stall");
-    return ids;
+    // In path order, so an unlock list reads the way the path does (the stall comes before 1.5 and 1.6)
+    return ids.sort(function (a, b) { return C.pathOrder.indexOf(a) - C.pathOrder.indexOf(b); });
   }
   function dueSkills() {
     var t = today();

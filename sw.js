@@ -2,7 +2,7 @@
    Strategy: network first, so a new version always shows when the server is reachable; the cache is only a fallback
    for when it isn't (offline, or opened from the Home Screen with no connection). Progress itself is NOT here: it stays
    in localStorage, which the service worker never touches. Bump CACHE when files are added or removed. */
-var CACHE = "p0-shell-v3";
+var CACHE = "p0-shell-v4";
 var ART = ["apple", "backpack", "bank", "banknote", "barchart", "basket", "bolt", "brain", "briefcase", "building", "bulb",
   "chartup", "crown", "farmer", "fire", "gift", "harvest", "informed", "juicebox", "label", "lemon", "lock", "medal", "memo",
   "moneybag", "news", "noentry", "numbers", "package", "people", "pizza", "puzzle", "rocket", "scale", "scroll", "shield",
@@ -13,7 +13,7 @@ var FILES = ["./", "index.html", "terms.html", "styles.css", "ui.js", "content.j
   "assets/icons/icon-180.png", "assets/icons/icon-192.png", "assets/icons/icon-512.png",
   "assets/licenses/FluentEmoji-MIT.txt", "assets/licenses/Fredoka-OFL.txt", "assets/licenses/Inter-OFL.txt"]
   .concat(ART.map(function (a) { return "assets/art/" + a + ".png"; }))
-  .concat(["s0-1", "s0-2", "s0-3", "s0-4", "s0-5", "s0-6", "s0-7", "s1-1", "s1-4"].map(function (b) { return "bank/" + b + ".js"; }));
+  .concat(["s0-1", "s0-2", "s0-3", "s0-4", "s0-5", "s0-6", "s0-7", "s1-1", "s1-2", "s1-3", "s1-4", "s1-5", "s1-6"].map(function (b) { return "bank/" + b + ".js"; }));
 
 self.addEventListener("install", function (e) {
   e.waitUntil(caches.open(CACHE).then(function (c) {
